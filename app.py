@@ -8,7 +8,7 @@ st.title("Power-Institutional Map Analysis (PIOM)")
 # ==========================================
 # PROFIL PENGEMBANG DI SIDEBAR
 # ==========================================
-st.sidebar.image("yuhka.jpg", caption="Yuhka Sundaya", use_container_width=True)
+st.sidebar.image("yuhka.jpg.jpg", caption="Yuhka Sundaya", use_container_width=True)
 st.sidebar.markdown("""
 <div style="text-align: center; margin-bottom: 20px;">
     <strong>Dikembangkan oleh:</strong><br>
