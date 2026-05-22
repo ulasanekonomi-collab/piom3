@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import plotly.express as px
 
 st.set_page_config(layout="wide")
 st.title("Power-Institutional Map Analysis (PIOM)")
@@ -14,11 +15,10 @@ st.sidebar.markdown("#### **Yuhka Sundaya**")
 st.sidebar.caption("Ekonomi Pembangunan Unisba @2026")
 st.sidebar.write("---")
 
-# 1. INISIALISASI SESSION STATE (DEFAULT AKTOR KOSONG)
+# 1. INISIALISASI SESSION STATE
 if "actors" not in st.session_state:
     st.session_state.actors = []
 
-# Fungsi untuk membuat/memperbarui matriks relasi
 def get_matrix(matrix_name, default_val=0):
     actors = st.session_state.actors
     n = len(actors)
@@ -27,7 +27,6 @@ def get_matrix(matrix_name, default_val=0):
             np.full((n, n), default_val), index=actors, columns=actors
         )
     else:
-        # Sinkronisasi jika ada penambahan aktor baru
         old_df = st.session_state[matrix_name]
         new_df = pd.DataFrame(default_val, index=actors, columns=actors)
         for r in old_df.index:
@@ -37,7 +36,7 @@ def get_matrix(matrix_name, default_val=0):
         st.session_state[matrix_name] = new_df
     return st.session_state[matrix_name]
 
-# 2. MANAJEMEN AKTOR (INPUT)
+# 2. MANAJEMEN AKTOR
 st.sidebar.header("1. Manajemen Aktor")
 with st.sidebar.form("add_actor_form", clear_on_submit=True):
     new_actor = st.text_input("Nama Aktor Baru:")
@@ -60,19 +59,19 @@ tabs = st.tabs([
     "3. Matriks Collaboration", 
     "4. Matriks Influence", 
     "5. Matriks Conflict", 
-    "6. Matriks Power"
+    "6. Matriks Power",
+    "7. Analisis Power & Public Choice"
 ])
 
-# DEFINISI SKALA STANDARD SESUAI FRAMEWORK CIC-P (-5 s.d +5)
-cicp_full_options = list(range(-5, 6))       # [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]
-cicp_positive_options = list(range(0, 6))   # [0, 1, 2, 3, 4, 5] untuk Kolaborasi murni
-cicp_negative_options = list(range(-5, 1))   # [-5, -4, -3, -2, -1, 0] untuk Konflik murni
+score_options = [0, 1, 2, 3]
+cicp_full_options = list(range(-5, 6))
+cicp_positive_options = list(range(0, 6))
+cicp_negative_options = list(range(-5, 1))
 
-# JIKA BELUM ADA AKTOR, TAMPILKAN PESAN DI SETIAP TAB
 if len(st.session_state.actors) == 0:
-    for i in range(5):
+    for i in range(6):
         with tabs[i]:
-            st.info("Silakan masukkan minimal satu nama aktor di menu samping (sidebar) terlebih dahulu untuk mengisi matriks.")
+            st.info("Silakan masukkan minimal satu nama aktor di menu samping (sidebar) terlebih dahulu.")
 else:
     # --- TAB 2: MATRIKS AKTOR (ATRIBUT) ---
     with tabs[0]:
@@ -95,38 +94,98 @@ else:
         edited_attr = st.data_editor(st.session_state.matrix_atribut, use_container_width=True, key="editor_attr")
         st.session_state.matrix_atribut = edited_attr
 
-    # --- TAB 3: COLLABORATION (Skala 0 s.d +5) ---
+    # --- TAB 3: COLLABORATION ---
     with tabs[1]:
         st.subheader("Matriks Kolaborasi Antar-Aktor (Collaboration)")
-        st.caption("Arah pengisian: Seberapa besar Baris menginisiasi/mendukung kolaborasi ke Kolom (Skala 0 s.d 5)")
         df_collab = get_matrix("matrix_collaboration", default_val=0)
         config_collab = {col: st.column_config.SelectboxColumn(options=cicp_positive_options, width="medium") for col in df_collab.columns}
         edited_collab = st.data_editor(df_collab, column_config=config_collab, use_container_width=True, key="editor_collab")
         st.session_state.matrix_collaboration = edited_collab
 
-    # --- TAB 4: INFLUENCE (Skala Rentang Penuh -5 s.d +5) ---
+    # --- TAB 4: INFLUENCE ---
     with tabs[2]:
         st.subheader("Matriks Pengaruh Antar-Aktor (Influence)")
-        st.caption("Arah pengisian: Dampak pengaruh Baris ke Kolom. Nilai (-) melemahkan, (+) memperkuat (Skala -5 s.d 5)")
         df_inf = get_matrix("matrix_influence", default_val=0)
         config_inf = {col: st.column_config.SelectboxColumn(options=cicp_full_options, width="medium") for col in df_inf.columns}
         edited_inf = st.data_editor(df_inf, column_config=config_inf, use_container_width=True, key="editor_inf")
         st.session_state.matrix_influence = edited_inf
 
-    # --- TAB 5: CONFLICT (Skala -5 s.d 0) ---
+    # --- TAB 5: CONFLICT ---
     with tabs[3]:
         st.subheader("Matriks Konflik Kepentingan Antar-Aktor (Conflict)")
-        st.caption("Arah pengisian: Resistensi atau potensi gesekan kepentingan Baris terhadap Kolom (Skala -5 s.d 0)")
         df_conf = get_matrix("matrix_conflict", default_val=0)
         config_conf = {col: st.column_config.SelectboxColumn(options=cicp_negative_options, width="medium") for col in df_conf.columns}
         edited_conf = st.data_editor(df_conf, column_config=config_conf, use_container_width=True, key="editor_conf")
         st.session_state.matrix_conflict = edited_conf
 
-    # --- TAB 6: POWER (Skala Rentang Penuh -5 s.d +5) ---
+    # --- TAB 6: POWER ---
     with tabs[4]:
         st.subheader("Matriks Kekuasaan/Otoritas Antar-Aktor (Power)")
-        st.caption("Arah pengisian: Otoritas/Kendali Baris atas Kolom. Nilai (-) bentuk subordinasi, (+) kontrol langsung (Skala -5 s.d 5)")
         df_pow = get_matrix("matrix_power", default_val=0)
         config_pow = {col: st.column_config.SelectboxColumn(options=cicp_full_options, width="medium") for col in df_pow.columns}
         edited_pow = st.data_editor(df_pow, column_config=config_pow, use_container_width=True, key="editor_pow")
         st.session_state.matrix_power = edited_pow
+
+    # --- TAB 7: OUTPUT ANALISIS PUBLIC CHOICE (BUCHANAN-TULLOCK) ---
+    with tabs[5]:
+        st.subheader("Analisis Peta Kekuasaan & Pilihan Publik (Public Choice)")
+        st.markdown("Mengacu pada kerangka pemikiran **James Buchanan & Gordon Tullock** (*The Calculus of Consent*), grafik di bawah ini memetakan posisi aktor berdasarkan akumulasi Otoritas Formal Kekuasaan (Power) vs Kapasitas Lobi/Sektoral (Influence).")
+        
+        # Ekstrak data matriks terkini
+        m_inf = st.session_state.matrix_influence
+        m_pow = st.session_state.matrix_power
+        
+        # Hitung Nilai Rata-rata Output (Mean Out-Degree) untuk Sumbu X dan Y
+        # Menggunakan rata-rata agar skalanya tetap berada di kisaran -5 sampai +5
+        summary_data = []
+        for actor in st.session_state.actors:
+            mean_inf_out = m_inf.loc[actor].mean()
+            mean_pow_out = m_pow.loc[actor].mean()
+            
+            # Tentukan klasifikasi kuadran berdasarkan nilai tengah (0)
+            if mean_inf_out >= 0 and mean_pow_out >= 0:
+                kuadran = "Kuadran I: The Ruling Coalition (Pusat Kendali Politik)"
+            elif mean_inf_out >= 0 and mean_pow_out < 0:
+                kuadran = "Kuadran II: The Rent-Seekers / Lobbyists (Pemburu Rente)"
+            elif mean_inf_out < 0 and mean_pow_out >= 0:
+                kuadran = "Kuadran III: The Constitutional Agents (Birokrat Murni)"
+            else:
+                kuadran = "Kuadran IV: The Disfranchised Public (Publik Marjinal)"
+                
+            summary_data.append({
+                "Aktor": actor,
+                "Influence Score (X)": round(mean_inf_out, 2),
+                "Power Score (Y)": round(mean_pow_out, 2),
+                "Tipologi Kelembagaan": kuadran
+            })
+            
+        df_summary = pd.DataFrame(summary_data)
+        
+        # Tampilkan tabel kalkulasi ringkas
+        st.write("**Tabel Indeks Agregat Aktor:**")
+        st.dataframe(df_summary, use_container_width=True)
+        
+        st.write("---")
+        st.write("**Grafik Peta Kuadran Ekonomi Politik:**")
+        
+        # Membuat Scatter Plot interaktif menggunakan Plotly
+        fig = px.scatter(
+            df_summary, 
+            x="Influence Score (X)", 
+            y="Power Score (Y)", 
+            text="Aktor",
+            color="Tipologi Kelembagaan",
+            range_x=[-5.5, 5.5],
+            range_y=[-5.5, 5.5],
+            labels={"Influence Score (X)": "Kapasitas Pengaruh & Lobi (Influence)", "Power Score (Y)": "Otoritas Konstitusional (Power)"},
+            title="Peta Kuadran Aktor (Tradisi Virginia School of Public Choice)"
+        )
+        
+        # Menambahkan garis silang penanda titik nol (0,0) sebagai batas kuadran
+        fig.add_shape(type="line", x0=-5.5, y0=0, x1=5.5, y1=0, line=dict(color="gray", width=1, dash="dash"))
+        fig.add_shape(type="line", x0=0, y0=-5.5, x1=0, y1=5.5, line=dict(color="gray", width=1, dash="dash"))
+        
+        fig.update_traces(marker=dict(size=12), textposition='top center')
+        fig.update_layout(height=600, legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="left", x=0))
+        
+        st.plotly_chart(fig, use_container_width=True)
