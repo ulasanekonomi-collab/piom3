@@ -63,38 +63,48 @@ with tabs[0]:
             {"Tipe Lembaga": ["Formal"] * len(st.session_state.actors), "Peran Utama": ["Regulator"] * len(st.session_state.actors)},
             index=st.session_state.actors
         )
-    edited_attr = st.data_editor(st.session_state.matrix_atribut, use_container_width=True)
+    # Sinkronisasi baris jika ada aktor baru di atribut
+    if len(st.session_state.matrix_atribut) != len(st.session_state.actors):
+        new_attr = pd.DataFrame(
+            {"Tipe Lembaga": ["Formal"] * len(st.session_state.actors), "Peran Utama": ["Regulator"] * len(st.session_state.actors)},
+            index=st.session_state.actors
+        )
+        for r in st.session_state.matrix_atribut.index:
+            if r in new_attr.index:
+                new_attr.loc[r] = st.session_state.matrix_atribut.loc[r]
+        st.session_state.matrix_atribut = new_attr
+
+    edited_attr = st.data_editor(st.session_state.matrix_atribut, use_container_width=True, key="editor_attr")
     st.session_state.matrix_atribut = edited_attr
 
 # --- TAB 3: COLLABORATION ---
 with tabs[1]:
     st.subheader("Matriks Kolaborasi Antar-Aktor")
     df_collab = get_matrix("matrix_collaboration", default_val=0)
-    # Membuat dropdown otomatis di setiap sel tabel
-    config = {col: st.column_config.SelectboxColumn(options=score_options, width="medium") for col in df_collab.columns}
-    edited_collab = st.data_editor(df_collab, column_config=config, use_container_width=True)
+    config_collab = {col: st.column_config.SelectboxColumn(options=score_options, width="medium") for col in df_collab.columns}
+    edited_collab = st.data_editor(df_collab, column_config=config_collab, use_container_width=True, key="editor_collab")
     st.session_state.matrix_collaboration = edited_collab
 
 # --- TAB 4: INFLUENCE ---
 with tabs[2]:
     st.subheader("Matriks Pengaruh (Influence) Antar-Aktor")
     df_inf = get_matrix("matrix_influence", default_val=0)
-    config = {col: st.column_config.SelectboxColumn(options=score_options, width="medium") for col in df_inf.columns}
-    edited_inf = st.data_editor(df_inf, column_config=config, use_container_width=True)
+    config_inf = {col: st.column_config.SelectboxColumn(options=score_options, width="medium") for col in df_inf.columns}
+    edited_inf = st.data_editor(df_inf, column_config=config_inf, use_container_width=True, key="editor_inf")
     st.session_state.matrix_influence = edited_inf
 
 # --- TAB 5: CONFLICT ---
 with tabs[3]:
     st.subheader("Matriks Konflik Kepentingan Antar-Aktor")
     df_conf = get_matrix("matrix_conflict", default_val=0)
-    config = {col: st.column_config.SelectboxColumn(options=score_options_conflict, width="medium") for col in df_conf.columns}
-    edited_conf = st.data_editor(df_conf, column_config=config, use_container_width=True)
+    config_conf = {col: st.column_config.SelectboxColumn(options=score_options_conflict, width="medium") for col in df_conf.columns}
+    edited_conf = st.data_editor(df_conf, column_config=config_conf, use_container_width=True, key="editor_conf")
     st.session_state.matrix_conflict = edited_conf
 
 # --- TAB 6: POWER ---
 with tabs[4]:
     st.subheader("Matriks Kekuasaan (Power) Antar-Aktor")
     df_pow = get_matrix("matrix_power", default_val=0)
-    config = {col: st.column_config.SelectboxColumn(options=score_options, width="medium") for col in df_pow.columns}
-    edited_pow = st.data_editor(df_pow, column_config=config, use_container_width=True)
+    config_pow = {col: st.column_config.SelectboxColumn(options=score_options, width="medium") for col in df_pow.columns}
+    edited_pow = st.data_editor(df_pow, column_config=config_pow, use_container_width=True, key="editor_pow")
     st.session_state.matrix_power = edited_pow
