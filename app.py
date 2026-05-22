@@ -5,7 +5,20 @@ import numpy as np
 st.set_page_config(layout="wide")
 st.title("Power-Institutional Map Analysis (PIOM)")
 
-# 1. INISIALISASI SESSION STATE (DEFAULT AKTOR DIUBAH JADI KOSONG)
+# ==========================================
+# PROFIL PENGEMBANG DI SIDEBAR
+# ==========================================
+st.sidebar.image("yuhka.jpg", caption="Yuhka Sundaya", use_container_width=True)
+st.sidebar.markdown("""
+<div style="text-align: center; margin-bottom: 20px;">
+    <strong>Dikembangkan oleh:</strong><br>
+    <span style="font-size: 1.1em; font-weight: bold;">Yuhka Sundaya</span><br>
+    <span style="font-size: 0.9em; color: gray;">Ekonomi Pembangunan Unisba @2026</span>
+</div>
+""", unsafe_html=True)
+st.sidebar.write("---")
+
+# 1. INISIALISASI SESSION STATE (DEFAULT AKTOR KOSONG)
 if "actors" not in st.session_state:
     st.session_state.actors = []
 
