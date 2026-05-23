@@ -44,7 +44,6 @@ def update_matrix_structure():
             for r in old_df.index:
                 if r in new_df.index:
                     if key == "matrix_atribut":
-                        # Ambil nilai kolom yang ada agar tidak ter-reset
                         for col in old_df.columns:
                             if col in new_df.columns:
                                 new_df.loc[r, col] = old_df.loc[r, col]
@@ -115,295 +114,238 @@ def save_changes(key_name, editor_state_name):
                 df.loc[row_name, col_name] = val
         st.session_state[key_name] = df
 
+# Pengecekan Aktor Kosong
 if len(st.session_state.actors) == 0:
     st.info("Silakan masukkan minimal satu nama aktor di menu samping (sidebar) terlebih dahulu untuk membuka instrumen.")
 else:
+    # Inisialisasi list penampung penyakit global untuk Therapeutic Engine
+    all_diseases = []
+
+    # --- JALANKAN PROSES DIAGNOSIS BACKGROUND SECARA LATEN UNTUK RESERVOIR SOLUSI ---
+    m_pow = st.session_state.matrix_power
+    m_inf = st.session_state.matrix_influence
+    m_collab = st.session_state.matrix_collaboration
+    m_conf = st.session_state.matrix_conflict
+    m_attr = st.session_state.matrix_atribut
+    actors = st.session_state.actors
+
+    for i in range(len(actors)):
+        for j in range(len(actors)):
+            if i == j: continue
+            actA = actors[i]
+            actB = actors[j]
+            
+            # Extract data relasi terarah
+            p_formal = m_pow.loc[actA, actB]
+            inf_val = m_inf.loc[actA, actB]
+            collab_val = m_collab.loc[actA, actB]
+            c_A_to_B = m_conf.loc[actA, actB]
+            
+            p_reverse = m_pow.loc[actB, actA]
+            inf_reverse = m_inf.loc[actB, actA]
+            collab_reverse = m_collab.loc[actB, actA]
+            c_B_to_A = m_conf.loc[actB, actA]
+            
+            typeA = m_attr.loc[actA, "Tipe Lembaga"]
+            typeB = m_attr.loc[actB, "Tipe Lembaga"]
+
+            # Lacak Penyakit Property Rights
+            if i < j:
+                if (c_A_to_B <= -4 or c_B_to_A <= -4) and (p_formal >= 4 and p_reverse >= 4):
+                    all_diseases.append("⚠️ Institutional Deadlock")
+            
+            # Lacak Penyakit Transaction Cost
+            if inf_val >= 4 and collab_val <= 1:
+                all_diseases.append("🚨 Information Hoarding")
+            if i < j and (inf_val >= 3 or inf_reverse >= 3) and (collab_val == 0 and collab_reverse == 0):
+                all_diseases.append("⚠️ High Transaction Cost Barrier")
+
+            # Lacak Penyakit Principal Agent
+            if p_formal >= 4 and inf_reverse >= 4:
+                all_diseases.append("🚨 Potential Agency Capture")
+            elif p_formal >= 4 and collab_reverse == 0:
+                all_diseases.append("⚠️ Indikasi Moral Hazard (Shirking)")
+
+            # Lacak Penyakit Social Capital
+            if i < j and typeA == "Informal" and typeB == "Informal" and collab_AB <= 1 and collab_BA <= 1:
+                all_diseases.append("🚨 Low Bridging Capital")
+            if typeA == "Formal" and typeB == "Informal" and collab_reverse == 0:
+                all_diseases.append("🚨 Low Linking Capital")
+
+
+    # ==========================================
+    # KONTEN INTERFASE ROUTING MENU UTAMA
+    # ==========================================
+    
     # --- MENU: ATRIBUT ---
     if menu_pilihan == "Data: Matriks Atribut Aktor":
         st.subheader("Matriks Profil & Atribut Aktor")
-        st.markdown("Tentukan tipe lembaga (**Formal** atau **Informal**) untuk setiap elemen aktor.")
-        df_attr = st.session_state.matrix_atribut
         config_attr = {
             "Tipe Lembaga": st.column_config.SelectboxColumn(options=["Formal", "Informal"], width="medium", required=True),
             "Peran Utama": st.column_config.TextColumn(width="medium")
         }
-        edited_attr = st.data_editor(
-            df_attr, column_config=config_attr, use_container_width=True, key="editor_attr_state",
-            on_change=save_changes, args=("matrix_atribut", "editor_attr_state")
-        )
+        edited_attr = st.data_editor(st.session_state.matrix_atribut, column_config=config_attr, use_container_width=True, key="editor_attr_state", on_change=save_changes, args=("matrix_atribut", "editor_attr_state"))
         st.session_state.matrix_atribut = edited_attr
 
     # --- MENU: COLLABORATION ---
     elif menu_pilihan == "Data: Matriks Collaboration":
         st.subheader("Matriks Kolaborasi Antar-Aktor (Collaboration)")
-        df_collab = st.session_state.matrix_collaboration
-        config_collab = {col: st.column_config.SelectboxColumn(options=cicp_positive_options, width="medium") for col in df_collab.columns}
-        edited_collab = st.data_editor(
-            df_collab, column_config=config_collab, use_container_width=True, key="editor_collab_state",
-            on_change=save_changes, args=("matrix_collaboration", "editor_collab_state")
-        )
+        config_collab = {col: st.column_config.SelectboxColumn(options=cicp_positive_options, width="medium") for col in m_collab.columns}
+        edited_collab = st.data_editor(m_collab, column_config=config_collab, use_container_width=True, key="editor_collab_state", on_change=save_changes, args=("matrix_collaboration", "editor_collab_state"))
         st.session_state.matrix_collaboration = edited_collab
 
     # --- MENU: INFLUENCE ---
     elif menu_pilihan == "Data: Matriks Influence":
         st.subheader("Matriks Pengaruh Antar-Aktor (Influence)")
-        df_inf = st.session_state.matrix_influence
-        config_inf = {col: st.column_config.SelectboxColumn(options=cicp_full_options, width="medium") for col in df_inf.columns}
-        edited_inf = st.data_editor(
-            df_inf, column_config=config_inf, use_container_width=True, key="editor_inf_state",
-            on_change=save_changes, args=("matrix_influence", "editor_inf_state")
-        )
+        config_inf = {col: st.column_config.SelectboxColumn(options=cicp_full_options, width="medium") for col in m_inf.columns}
+        edited_inf = st.data_editor(m_inf, column_config=config_inf, use_container_width=True, key="editor_inf_state", on_change=save_changes, args=("matrix_influence", "editor_inf_state"))
         st.session_state.matrix_influence = edited_inf
 
     # --- MENU: CONFLICT ---
     elif menu_pilihan == "Data: Matriks Conflict":
         st.subheader("Matriks Konflik Kepentingan Antar-Aktor (Conflict)")
-        df_conf = st.session_state.matrix_conflict
-        config_conf = {col: st.column_config.SelectboxColumn(options=cicp_negative_options, width="medium") for col in df_conf.columns}
-        edited_conf = st.data_editor(
-            df_conf, column_config=config_conf, use_container_width=True, key="editor_conf_state",
-            on_change=save_changes, args=("matrix_conflict", "editor_conf_state")
-        )
+        config_conf = {col: st.column_config.SelectboxColumn(options=cicp_negative_options, width="medium") for col in m_conf.columns}
+        edited_conf = st.data_editor(m_conf, column_config=config_conf, use_container_width=True, key="editor_conf_state", on_change=save_changes, args=("matrix_conflict", "editor_conf_state"))
         st.session_state.matrix_conflict = edited_conf
 
     # --- MENU: POWER ---
     elif menu_pilihan == "Data: Matriks Power":
         st.subheader("Matriks Kekuasaan/Otoritas Antar-Aktor (Power)")
-        df_pow = st.session_state.matrix_power
-        config_pow = {col: st.column_config.SelectboxColumn(options=cicp_full_options, width="medium") for col in df_pow.columns}
-        edited_pow = st.data_editor(
-            df_pow, column_config=config_pow, use_container_width=True, key="editor_pow_state",
-            on_change=save_changes, args=("matrix_power", "editor_pow_state")
-        )
+        config_pow = {col: st.column_config.SelectboxColumn(options=cicp_full_options, width="medium") for col in m_pow.columns}
+        edited_pow = st.data_editor(m_pow, column_config=config_pow, use_container_width=True, key="editor_pow_state", on_change=save_changes, args=("matrix_power", "editor_pow_state"))
         st.session_state.matrix_power = edited_pow
 
     # --- MENU: ANALISIS PUBLIC CHOICE ---
     elif menu_pilihan == "Analisis: Power & Public Choice":
         st.subheader("Analisis Peta Kekuasaan & Pilihan Publik (Public Choice)")
         st.markdown("Mengacu pada kerangka pemikiran **James Buchanan & Gordon Tullock**, grafik memetakan posisi aktor berdasarkan akumulasi Otoritas Formal (Power) vs Kapasitas Lobi (Influence).")
-        
-        m_inf = st.session_state.matrix_influence
-        m_pow = st.session_state.matrix_power
-        
         summary_data = []
-        for actor in st.session_state.actors:
+        for actor in actors:
             sum_inf_out = m_inf.loc[actor].sum()
             sum_pow_out = m_pow.loc[actor].sum()
-            
-            if sum_inf_out > 0 and sum_pow_out > 0:
-                kuadran = "Kuadran I: The Ruling Coalition"
-            elif sum_inf_out >= 0 and sum_pow_out <= 0:
-                kuadran = "Kuadran II: The Rent-Seekers / Lobbyists"
-            elif sum_inf_out <= 0 and sum_pow_out > 0:
-                kuadran = "Kuadran III: The Constitutional Agents"
-            else:
-                kuadran = "Kuadran IV: The Disfranchised Public"
-                
-            summary_data.append({
-                "Aktor": actor,
-                "Total Influence (X)": int(sum_inf_out),
-                "Total Power (Y)": int(sum_pow_out),
-                "Tipologi Kelembagaan": kuadran
-            })
-            
+            if sum_inf_out > 0 and sum_pow_out > 0: kuadran = "Kuadran I: The Ruling Coalition"
+            elif sum_inf_out >= 0 and sum_pow_out <= 0: kuadran = "Kuadran II: The Rent-Seekers / Lobbyists"
+            elif sum_inf_out <= 0 and sum_pow_out > 0: kuadran = "Kuadran III: The Constitutional Agents"
+            else: kuadran = "Kuadran IV: The Disfranchised Public"
+            summary_data.append({"Aktor": actor, "Total Influence (X)": int(sum_inf_out), "Total Power (Y)": int(sum_pow_out), "Tipologi Kelembagaan": kuadran})
         df_summary = pd.DataFrame(summary_data)
         st.write("**Tabel Indeks Agregat Ekonomi Politik:**")
         st.dataframe(df_summary, use_container_width=True)
-        
         st.write("---")
-        max_bound = max(abs(df_summary["Total Influence (X)"].max()), abs(df_summary["Total Influence (X)"].min()),
-                        abs(df_summary["Total Power (Y)"].max()), abs(df_summary["Total Power (Y)"].min()), 5) + 2
-        
-        fig = px.scatter(
-            df_summary, x="Total Influence (X)", y="Total Power (Y)", text="Aktor",
-            color="Tipologi Kelembagaan", range_x=[-max_bound, max_bound], range_y=[-max_bound, max_bound],
-            labels={"Total Influence (X)": "Total Kapasitas Pengaruh (Influence)", "Total Power (Y)": "Total Otoritas Konstitusional (Power)"}
-        )
+        max_bound = max(abs(df_summary["Total Influence (X)"].max()), abs(df_summary["Total Influence (X)"].min()), abs(df_summary["Total Power (Y)"].max()), abs(df_summary["Total Power (Y)"].min()), 5) + 2
+        fig = px.scatter(df_summary, x="Total Influence (X)", y="Total Power (Y)", text="Aktor", color="Tipologi Kelembagaan", range_x=[-max_bound, max_bound], range_y=[-max_bound, max_bound])
         fig.add_shape(type="line", x0=-max_bound, y0=0, x1=max_bound, y1=0, line=dict(color="gray", width=1, dash="dash"))
         fig.add_shape(type="line", x0=0, y0=-max_bound, x1=0, y1=max_bound, line=dict(color="gray", width=1, dash="dash"))
         fig.update_traces(marker=dict(size=14), textposition='top center')
         fig.update_layout(height=550, legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="left", x=0))
         st.plotly_chart(fig, use_container_width=True)
 
-    # --- MENU: ANALISIS PROPERTY RIGHTS (NIE) ---
+    # --- MENU: ANALISIS PROPERTY RIGHTS ---
     elif menu_pilihan == "Analisis: Property Rights (NIE)":
         st.subheader("Analisis Hak Kepemilikan & Tatanan Kelembagaan (Property Rights)")
-        st.markdown("Mengacu pada kerangka pemikiran **Oliver Williamson & Ronald Coase**, dashboard ini memindai titik friksi kelembagaan akibat sengketa hak kelola (*overlapping jurisdictions*) atau peminggiran hak kelompok marjinal.")
-        
-        m_conf = st.session_state.matrix_conflict
-        m_pow = st.session_state.matrix_power
-        actors = st.session_state.actors
-        
         friction_logs = []
-        
         for i in range(len(actors)):
             for j in range(i + 1, len(actors)):
-                actA = actors[i]
-                actB = actors[j]
-                
-                c_A_to_B = m_conf.loc[actA, actB]
-                c_B_to_A = m_conf.loc[actB, actA]
-                p_A_to_B = m_pow.loc[actA, actB]
-                p_B_to_A = m_pow.loc[actB, actA]
-                
-                if (c_A_to_B <= -4 or c_B_to_A <= -4) and (p_A_to_B >= 4 and p_B_to_A >= 4):
-                    friction_logs.append({
-                        "Interaksi Aktor": f"{actA} ↔ {actB}",
-                        "Friction Type": "⚠️ Institutional Deadlock",
-                        "Deskripsi Diagnosis": f"Terjadi tumpang tindih Hak Kepemilikan formal yang parah (Keduanya memegang Power formal $\\ge 4$ namun memiliki tingkat konflik relasi ekstrem $\\le -4$). Regulasi berisiko macet total."
-                    })
-                
-                elif (c_A_to_B <= -3 or c_B_to_A <= -3) and ((p_A_to_B >= 4 and p_B_to_A == 0) or (p_B_to_A >= 4 and p_A_to_B == 0)):
-                    penguasa = actA if p_A_to_B >= 4 else actB
-                    tereksklusi = actB if p_A_to_B >= 4 else actA
-                    friction_logs.append({
-                        "Interaksi Aktor": f"{penguasa} → {tereksklusi}",
-                        "Friction Type": "🚨 Institutional Exclusion",
-                        "Deskripsi Diagnosis": f"Struktur aturan formal mengucilkan pranata lokal/informal. Otoritas formal {penguasa} menekan kepentingan {tereksklusi} tanpa memberikan ruang hak tawar hukum yang setara (Power = 0)."
-                    })
-        
-        if len(friction_logs) == 0:
-            st.success("✅ **Sistem Aman:** Tidak ditemukan indikasi kerusakan jalinan 'Property Rights' atau tumpang tindih jurisdiksi formal yang ekstrem dari data matriks saat ini.")
+                actA, actB = actors[i], actors[j]
+                if (m_conf.loc[actA, actB] <= -4 or m_conf.loc[actB, actA] <= -4) and (m_pow.loc[actA, actB] >= 4 and m_pow.loc[actB, actA] >= 4):
+                    friction_logs.append({"Interaksi Aktor": f"{actA} ↔ {actB}", "Friction Type": "⚠️ Institutional Deadlock", "Deskripsi Diagnosis": "Terjadi tumpang tindih Hak Kepemilikan formal yang parah. Regulasi berisiko macet total."})
+                elif (m_conf.loc[actA, actB] <= -3 or m_conf.loc[actB, actA] <= -3) and ((m_pow.loc[actA, actB] >= 4 and m_pow.loc[actB, actA] == 0) or (m_pow.loc[actB, actA] >= 4 and m_pow.loc[actA, actB] == 0)):
+                    penguasa = actA if m_pow.loc[actA, actB] >= 4 else actB
+                    tereksklusi = actB if m_pow.loc[actA, actB] >= 4 else actA
+                    friction_logs.append({"Interaksi Aktor": f"{penguasa} → {tereksklusi}", "Friction Type": "🚨 Institutional Exclusion", "Deskripsi Diagnosis": f"Otoritas formal {penguasa} menekan kepentingan {tereksklusi} tanpa hak tawar hukum setara."})
+        if len(friction_logs) == 0: st.success("✅ **Sistem Aman:** Tidak ditemukan indikasi kerusakan jalinan 'Property Rights'.")
         else:
-            st.warning(f"🚨 **Terdeteksi {len(friction_logs)} Titik Gesekan Kelembagaan Sektoral:**")
-            df_friction = pd.DataFrame(friction_logs)
-            st.dataframe(df_friction, use_container_width=True)
-            st.write("---")
-            st.info("💡 **Rekomendasi Kebijakan (Coasean Insight):** Sengketa kelembagaan di atas membutuhkan penegasan garis demarkasi hak kelola (*clear-cut property rights*) pada Level 2 Williamson (Aturan Formal) untuk menekan tingginya biaya transaksi di lapangan.")
+            st.warning("🚨 **Terdeteksi Titik Gesekan Kelembagaan Sektoral:**")
+            st.dataframe(pd.DataFrame(friction_logs), use_container_width=True)
 
-    # --- MENU: ANALISIS TRANSACTION COST & INFO ---
+    # --- MENU: ANALISIS TRANSACTION COST ---
     elif menu_pilihan == "Analisis: Transaction Cost & Info":
         st.subheader("Analisis Biaya Transaksi & Asimetri Informasi")
-        st.markdown("Mengacu pada kerangka pemikiran **Ronald Coase & Oliver Williamson**, modul ini mendeteksi kebocoran efisiensi sistem akibat pembendungan informasi (*information hoarding*) atau sumbatan sekat birokrasi.")
-        
-        m_inf = st.session_state.matrix_influence
-        m_collab = st.session_state.matrix_collaboration
-        actors = st.session_state.actors
-        
         tc_logs = []
-        
         for actA in actors:
             for actB in actors:
-                if actA == actB:
-                    continue
-                
-                inf_val = m_inf.loc[actA, actB]
-                collab_val = m_collab.loc[actA, actB]
-                inf_reverse = m_inf.loc[actB, actA]
-                collab_reverse = m_collab.loc[actB, actA]
-                
-                if inf_val >= 4 and collab_val <= 1:
-                    tc_logs.append({
-                        "Arah Hubungan": f"{actA} → {actB}",
-                        "Indikator Penyakit": "🚨 Information Hoarding",
-                        "Deskripsi Analisis": f"{actA} memancarkan daya lobi/pengaruh yang kuat ({inf_val}) terhadap {actB}, namun menahan level kolaborasi riil di tingkat minimal ({collab_val}). Terindikasi memanfaatkan asimetri informasi untuk mengunci posisi tawar."
-                    })
-                
-                if actA < actB:
-                    if (inf_val >= 3 or inf_reverse >= 3) and (collab_val == 0 and collab_reverse == 0):
-                        tc_logs.append({
-                            "Arah Hubungan": f"{actA} ↔ {actB}",
-                            "Indikator Penyakit": "⚠️ High Transaction Cost Barrier",
-                            "Deskripsi Analisis": f"Kedua aktor saling memiliki keterikatan pengaruh horizontal yang kuat, namun level kolaborasi dua arah terkunci di angka 0. Tingginya sekat birokrasi atau 'distrust' membuat biaya transaksi koordinasi lebih mahal daripada insentif kerjasamanya."
-                        })
-                        
-        if len(tc_logs) == 0:
-            st.success("✅ **Sistem Efisien:** Tidak terdeteksi indikasi pembendungan informasi strategis atau sumbatan biaya transaksi yang ekstrem antar-aktor.")
+                if actA == actB: continue
+                if m_inf.loc[actA, actB] >= 4 and m_collab.loc[actA, actB] <= 1:
+                    tc_logs.append({"Arah Hubungan": f"{actA} → {actB}", "Indikator Penyakit": "🚨 Information Hoarding", "Deskripsi Analisis": f"{actA} memanfaatkan asimetri informasi untuk mengunci posisi tawar."})
+                if actA < actB and (m_inf.loc[actA, actB] >= 3 or m_inf.loc[actB, actA] >= 3) and (m_collab.loc[actA, actB] == 0 and m_collab.loc[actB, actA] == 0):
+                    tc_logs.append({"Arah Hubungan": f"{actA} ↔ {actB}", "Indikator Penyakit": "⚠️ High Transaction Cost Barrier", "Deskripsi Analisis": "Tingginya sekat birokrasi atau 'distrust' membuat biaya transaksi koordinasi terlalu mahal."})
+        if len(tc_logs) == 0: st.success("✅ **Sistem Efisien:** Tidak terdeteksi indikasi pembendungan informasi.")
         else:
-            st.warning(f"🚨 **Terdeteksi {len(tc_logs)} Titik Kebocoran Efisiensi Transaksi:**")
-            df_tc = pd.DataFrame(tc_logs)
-            st.dataframe(df_tc, use_container_width=True)
-            st.write("---")
-            st.info("💡 **Rekomendasi Kebijakan (Williamsonian Insight):** Atasi friksi di atas dengan menyusun instruksi kerja bersama, standarisasi data satu pintu, atau penguatan sistem pengawasan independen untuk memangkas *Information Asymmetry*.")
+            st.warning("🚨 **Terdeteksi Titik Kebocoran Efisiensi Transaksi:**")
+            st.dataframe(pd.DataFrame(tc_logs), use_container_width=True)
 
-    # --- MENU: ANALISIS PRINCIPAL-AGENT RELATIONSHIP ---
+    # --- MENU: ANALISIS PRINCIPAL-AGENT ---
     elif menu_pilihan == "Analisis: Principal-Agent (NIE)":
         st.subheader("Analisis Hubungan Keagenan (Principal-Agent Relationship)")
-        st.markdown("Mengacu pada tesis **Michael Jensen & William Meckling**, modul ini melacak kerentanan moral hazard di mana pelaksana program (*Agent*) menyimpangkan komitmen, atau mendikte balik pemberi mandat (*Principal*).")
-        
-        m_pow = st.session_state.matrix_power
-        m_inf = st.session_state.matrix_influence
-        m_collab = st.session_state.matrix_collaboration
-        actors = st.session_state.actors
-        
         pa_logs = []
-        
         for actA in actors:
             for actB in actors:
-                if actA == actB:
-                    continue
-                
-                p_formal = m_pow.loc[actA, actB]
-                inf_reverse = m_inf.loc[actB, actA]
-                collab_reverse = m_collab.loc[actB, actA]
-                
-                if p_formal >= 4 and inf_reverse >= 4:
-                    pa_logs.append({
-                        "Hubungan Struktural": f"{actA} (Principal) → {actB} (Agent)",
-                        "Kerentanan Hubungan": "🚨 Potential Agency Capture",
-                        "Deskripsi Analisis": f"{actA} memegang otoritas hukum formal ({p_formal}) atas {actB}. Namun, {actB} memancarkan lobi pengaruh balik ekstrem ({inf_reverse}) ke {actA}. Risiko tinggi fungsi pengawasan formal runtuh tersandera kepentingan Agen."
-                    })
-                
-                elif p_formal >= 4 and collab_reverse == 0:
-                    pa_logs.append({
-                        "Hubungan Struktural": f"{actA} (Principal) → {actB} (Agent)",
-                        "Kerentanan Hubungan": "⚠️ Indikasi Moral Hazard (Shirking)",
-                        "Deskripsi Analisis": f"{actA} menurunkan instruksi/mandat formal yang kuat ({p_formal}) kepada {actB}, namun respon kolaborasi balik dari {actB} murni berharga 0. Terindikasi melakukan pengabaian mandat secara oportunis demi meredam radar evaluasi."
-                    })
-                    
-        if len(pa_logs) == 0:
-            st.success("✅ **Hubungan Akuntabel:** Tidak terdeteksi adanya indikasi moral hazard penyimpangan tugas atau gejala tersanderanya pengawas oleh agen.")
+                if actA == actB: continue
+                if m_pow.loc[actA, actB] >= 4 and m_inf.loc[actB, actA] >= 4:
+                    pa_logs.append({"Hubungan Struktural": f"{actA} (Principal) → {actB} (Agent)", "Kerentanan Hubungan": "🚨 Potential Agency Capture", "Deskripsi Analisis": "Risiko tinggi fungsi pengawasan formal runtuh tersandera kepentingan Agen."})
+                elif m_pow.loc[actA, actB] >= 4 and m_collab.loc[actB, actA] == 0:
+                    pa_logs.append({"Hubungan Struktural": f"{actA} (Principal) → {actB} (Agent)", "Kerentanan Hubungan": "⚠️ Indikasi Moral Hazard (Shirking)", "Deskripsi Analisis": "Agen terindikasi melakukan pengabaian mandat secara oportunis demi meredam radar evaluasi."})
+        if len(pa_logs) == 0: st.success("✅ **Hubungan Akuntabel:** Tidak terdeteksi adanya indikasi moral hazard.")
         else:
-            st.warning(f"🚨 **Terdeteksi {len(pa_logs)} Titik Kerentanan Akuntabilitas Keagenan:**")
-            df_pa = pd.DataFrame(pa_logs)
-            st.dataframe(df_pa, use_container_width=True)
-            st.write("---")
-            st.info("💡 **Rekomendasi Kebijakan (Agency-Theory Insight):** Rekonstruksi struktur insentif kontrak kerja dengan beralih ke *Performance-Based Contracting* (insentif berbasis capaian output riil) dan perketat audit pihak ketiga independen.")
+            st.warning("🚨 **Terdeteksi Titik Kerentanan Akuntabilitas Keagenan:**")
+            st.dataframe(pd.DataFrame(pa_logs), use_container_width=True)
 
-    # --- MENU: ANALISIS SOCIAL CAPITAL & INFORMAL (MENU BARU!) ---
+    # --- MENU: ANALISIS SOCIAL CAPITAL ---
     elif menu_pilihan == "Analisis: Social Capital & Informal":
         st.subheader("Analisis Modal Sosial & Institusi Informal")
-        st.markdown("Mengacu pada kerangka pemikiran **Robert Putnam & Francis Fukuyama** (Williamson Level 1), modul ini memetakan kekuatan jalinan modal sosial (*Social Trust*) horizontal (*Bridging*) maupun saluran kemitraan vertikal menuju negara (*Linking*).")
-        
-        m_attr = st.session_state.matrix_atribut
-        m_collab = st.session_state.matrix_collaboration
-        actors = st.session_state.actors
-        
         sc_logs = []
-        
         for actA in actors:
             for actB in actors:
-                if actA == actB:
-                    continue
-                
-                typeA = m_attr.loc[actA, "Tipe Lembaga"]
-                typeB = m_attr.loc[actB, "Tipe Lembaga"]
-                collab_AB = m_collab.loc[actA, actB]
-                collab_BA = m_collab.loc[actB, actA]
-                
-                # Kasus 1: Keretakan Horizontal (Low Bridging Capital antara Sesama Entitas Informal)
-                if actA < actB and typeA == "Informal" and typeB == "Informal":
-                    if collab_AB <= 1 and collab_BA <= 1:
-                        sc_logs.append({
-                            "Jejaring Relasional": f"{actA} ↔ {actB}",
-                            "Kerusakan Jaringan": "🚨 Low Bridging Capital",
-                            "Deskripsi Diagnosis": f"Kedua faksi berstatus kelembagaan Informal/Akar Rumput, namun intensitas koordinasi dua arah macet ({collab_AB} & {collab_BA}). Terindikasi terjadi fragmentasi sosial akut (*silo komunitas*) di tingkat tapak."
-                        })
-                
-                # Kasus 2: Saluran Aspirasi Tersumbat (Low Linking Capital dari Informal ke Formal)
-                if typeA == "Formal" and typeB == "Informal":
-                    if collab_BA == 0:
-                        sc_logs.append({
-                            "Jejaring Relasional": f"{actB} (Informal) → {actA} (Formal)",
-                            "Kerusakan Jaringan": "🚨 Low Linking Capital",
-                            "Deskripsi Diagnosis": f"Saluran kemitraan vertikal dari pranata lokal/informal {actB} menuju regulator formal {actA} bernilai murni 0. Risiko tinggi melahirkan distrust masif pada negara dan resistensi kebijakan terselubung."
-                        })
-                        
-        if len(sc_logs) == 0:
-            st.success("✅ **Kesehatan Sosial Terjamin:** Tingkat modal sosial (*Social Trust*) berada pada kapasitas optimal. Sinergi horizontal maupun saluran aspirasi vertikal berjalan harmonis.")
+                if actA == actB: continue
+                if actA < actB and m_attr.loc[actA, "Tipe Lembaga"] == "Informal" and m_attr.loc[actB, "Tipe Lembaga"] == "Informal" and m_collab.loc[actA, actB] <= 1 and m_collab.loc[actB, actA] <= 1:
+                    sc_logs.append({"Jejaring Relasional": f"{actA} ↔ {actB}", "Kerusakan Jaringan": "🚨 Low Bridging Capital", "Deskripsi Diagnosis": "Terjadi fragmentasi sosial akut (silo komunitas) di tingkat tapak."})
+                if m_attr.loc[actA, "Tipe Lembaga"] == "Formal" and m_attr.loc[actB, "Tipe Lembaga"] == "Informal" and m_collab.loc[actB, actA] == 0:
+                    sc_logs.append({"Jejaring Relasional": f"{actB} (Informal) → {actA} (Formal)", "Kerusakan Jaringan": "🚨 Low Linking Capital", "Deskripsi Diagnosis": "Saluran kemitraan vertikal menuju regulator formal bernilai murni 0. Risiko distrust masif."})
+        if len(sc_logs) == 0: st.success("✅ **Kesehatan Sosial Terjamin:** Tingkat modal sosial (Social Trust) berada pada kapasitas optimal.")
         else:
-            st.warning(f"🚨 **Terdeteksi {len(sc_logs)} Titik Kelemahan Modal Sosial Komunitas:**")
-            df_sc = pd.DataFrame(sc_logs)
-            st.dataframe(df_sc, use_container_width=True)
-            st.write("---")
-            st.info("💡 **Rekomendasi Terapeutik (Ostromian Insight):** Bangun kembali modal sosial yang rapuh lewat fasilitasi ruang rembug warga lintas komunitas (untuk *Bridging*) serta pelembagaan sistem pengelolaan bersama (*Co-Management*) antara birokrasi dan pranata lokal (untuk *Linking*).")
+            st.warning("🚨 **Terdeteksi Titik Kelemahan Modal Sosial Komunitas:**")
+            st.dataframe(pd.DataFrame(sc_logs), use_container_width=True)
+
+
+    # ==========================================
+    # CORE ENGINE UTAMA: THERAPEUTIC SOLUTION GENERATOR
+    # ==========================================
+    st.write("---")
+    st.header("3. Executive Policy Brief & Rekomendasi Solusi Kelembagaan")
+    st.markdown("Menggunakan sintesis kumulatif lintas domain (**Ostromian Polycentricity & Williamson L1-L3 Framework**), sistem merumuskan cetak biru resep solusi otomatis:")
+
+    if len(all_diseases) == 0:
+        st.success("✅ **Sistem Konstitusi Aman:** Tidak ditemukan kontradiksi relasi strategis horizontal maupun vertikal. Struktur tata kelola berada pada efisiensi *Pareto Optimal*.")
+    else:
+        # Menghapus duplikasi alarm agar klaster solusi rapi
+        unique_diseases = set(all_diseases)
+        
+        st.error(f"🚨 **Hasil Diagnosis Sintesis Lintas Domain:** Terdeteksi indikasi kerusakan tata kelola sistemik. Berikut rekomendasi paket reformasi kelembagaan:")
+        
+        # Klaster A: Redesain Aturan Hukum Formal (Williamson Level 2)
+        if "⚠️ Institutional Deadlock" in unique_diseases or "🚨 Institutional Exclusion" in unique_diseases:
+            with st.expander("🏛️ KLASTER A: Jurisdictional Harmonization & Property Rights Redesign", expanded=True):
+                st.write("**Rekomendasi Utama (Clear-cut Boundaries):**")
+                st.write("- Terbitkan Peraturan Daerah (Perda) atau Peraturan Bersama Kepala Daerah baru untuk memotong tumpang tindih jurisdiksi yang memicu *deadlock*.")
+                st.write("- Legalitas hak kelola faksi lokal/informal wajib diakui secara resmi melalui kepastian hukum tertulis agar terhindar dari peminggiran sepihak (*Institutional Exclusion*).")
+
+        # Klaster B: Mekanisme Transparansi & Simetri Informasi (Williamson Level 3)
+        if "🚨 Information Hoarding" in unique_diseases or "⚠️ High Transaction Cost Barrier" in unique_diseases:
+            with st.expander("📊 KLASTER B: Information Symmetry & Transaction Cost Reduction", expanded=True):
+                st.write("**Rekomendasi Utama (Open-Data Manifest):**")
+                st.write("- Batasi keunggulan asimetri swasta dengan mewajibkan transparansi data hulu-hilir (volume sampah riil, neraca keuangan sirkular) sebagai syarat mutlak perpanjangan konsesi.")
+                st.write("- Sediakan platform data digital satu pintu untuk memangkas tingginya biaya transaksi koordinasi antar-instansi birokrasi.")
+
+        # Klaster C: Akuntabilitas & Penyelarasan Insentif Kontrak (Williamson Level 3)
+        if "🚨 Potential Agency Capture" in unique_diseases or "⚠️ Indikasi Moral Hazard (Shirking)" in unique_diseases:
+            with st.expander("📜 KLASTER C: Performance-Based Accountability (Anti-Capture Mechanism)", expanded=True):
+                st.write("**Rekomendasi Utama (Performance Contracting):**")
+                st.write("- Transformasikan seluruh ikatan kerja sama operasional dengan pihak ketiga/Agen dari pola serapan anggaran konvensional beralih menuju *Performance-Based Contracting* (insentif dibayarkan berbasis output riil bersih di lapangan).")
+                st.write("- Lembagakan dewan pengawas tripartit independen (pemerintah, akademisi, perwakilan warga) untuk mematahkan fenomena pembajakan regulasi (*Agency Capture*).")
+
+        # Klaster D: Kemitraan Kolaboratif & Penguatan Modal Sosial (Williamson Level 1)
+        if "🚨 Low Bridging Capital" in unique_diseases or "🚨 Low Linking Capital" in unique_diseases:
+            with st.expander("🌱 KLASTER D: Ostromian Co-Management & Social Trust Integration", expanded=True):
+                st.write("**Rekomendasi Utama (Polycentric Governance):**")
+                st.write("- Cegah malpraktik pemaksaan hukum *top-down* yang kaku. Ketika jalinan modal sosial vertikal retak (*Low Linking*), beralihlah ke pendekatan partisipatif.")
+                st.write("- Pelembagakan mekanisme Pengelolaan Bersama (*Co-Management*) dengan memberikan kuota wilayah kerja resmi bagi pranata lokal (seperti paguyuban pengepul/pemulung) sebagai rantai pasok formal daerah.")
