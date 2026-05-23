@@ -274,13 +274,13 @@ else:
                 if c_val <= -3 and p_formal >= 4 and p_reverse == 0:
                     raw_anomalies.append({"AktorA": actA, "AktorB": actB, "Tipe": "🚨 Institutional Exclusion", "Klaster": "Paket A"})
                 
-                # 2. Transaction Cost
+                # 2. Domain Transaction Cost
                 if inf_val >= 4 and collab_val <= 1:
                     raw_anomalies.append({"AktorA": actA, "AktorB": actB, "Tipe": "🚨 Information Hoarding", "Klaster": "Paket B"})
                 if i < j and (inf_val >= 3 or inf_reverse >= 3) and collab_val == 0 and collab_reverse == 0:
                     raw_anomalies.append({"AktorA": actA, "AktorB": actB, "Tipe": "⚠️ High Transaction Cost Barrier", "Klaster": "Paket B"})
 
-                # 3. Principal Agent
+                # 3. Domain Principal Agent
                 if p_formal >= 4 and inf_reverse >= 4:
                     raw_anomalies.append({"AktorA": actA, "AktorB": actB, "Tipe": "🚨 Potential Agency Capture", "Klaster": "Paket C"})
                 
@@ -338,7 +338,7 @@ else:
             df_ledger = pd.DataFrame(ledger_data)
             st.dataframe(df_ledger, use_container_width=True)
 
-        # --- STEP 6: FITUR BARU - SIMULASI MATRIKS IDEAL (DYNAMIC DUAL MATRIX GENERATOR) ---
+        # --- STEP 6: FIX ERROR - SIMULASI MATRIKS IDEAL (MENGGUNAKAN STANDAR DATAFRAME) ---
         st.write("---")
         st.write("#### 📊 Panduan Konfigurasi Matriks Ideal (Target Kuantitatif Struktur)")
         st.caption("Gunakan tab di bawah ini untuk melihat bagaimana angka-angka parameter sel matriks bertransformasi dari kondisi empiris saat ini menuju struktur ideal regulasi yang direkomendasikan.")
@@ -372,28 +372,28 @@ else:
 
             elif item["Klaster"] == "Paket D" and sim_d:
                 if "Linking" in item["Tipe"]:
-                    ideal_collab.loc[actA, actB] = 4 # Menaikkan derajat kemitraan informal-formal
+                    ideal_collab.loc[actA, actB] = 4 # Kemitraan ditingkatkan
 
-        # Tampilan Tab Interaktif untuk Komparasi Spasial Dua Matriks Utama
+        # Tampilan Tab Interaktif Tanpa background_gradient() Agar Bebas Matplotlib Error
         tab_mat_conf, tab_mat_collab = st.tabs(["🔒 Komparasi Matriks Konflik (Conflict Matrix)", "🤝 Komparasi Matriks Kolaborasi (Collaboration Matrix)"])
         
         with tab_mat_conf:
             c_left, c_right = st.columns(2)
             with c_left:
                 st.write("**Matriks Konflik Saat Ini (Kondisi Riil Pengguna):**")
-                st.dataframe(m_conf.style.background_gradient(cmap="Reds", axis=None), use_container_width=True)
+                st.dataframe(m_conf, use_container_width=True)
             with c_right:
                 st.write("**Target Matriks Konflik Pasca Regulasi (Konfigurasi Ideal):**")
-                st.dataframe(ideal_conflict.style.background_gradient(cmap="YlGn", axis=None), use_container_width=True)
+                st.dataframe(ideal_conflict, use_container_width=True)
                 
         with tab_mat_collab:
             col_left, col_right = st.columns(2)
             with col_left:
                 st.write("**Matriks Kolaborasi Saat Ini (Kondisi Riil Pengguna):**")
-                st.dataframe(m_collab.style.background_gradient(cmap="Purples", axis=None), use_container_width=True)
+                st.dataframe(m_collab, use_container_width=True)
             with col_right:
                 st.write("**Target Matriks Kolaborasi Pasca Regulasi (Konfigurasi Ideal):**")
-                st.dataframe(ideal_collab.style.background_gradient(cmap="YlGn", axis=None), use_container_width=True)
+                st.dataframe(ideal_collab, use_container_width=True)
 
         # --- STEP 7: LEMBAR REKOMENDASI DOKUMEN GENERIK ---
         st.write("---")
