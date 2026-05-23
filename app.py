@@ -245,7 +245,7 @@ else:
         st.subheader("Cetak Biru Tata Kelola & Simulasi Kebijakan Dinamis")
         st.markdown("Selamat datang di **Policy Simulation Lab**. Di menu ini, Anda dapat menguji paket reformasi kelembagaan terhadap kesehatan sistem sekaligus memantau proyeksi perubahan spasial angka matriks menuju kondisi ideal.")
 
-        # --- STEP 1: PANEL KENDALI INTERVENSI (SUNDUHAN KODE HOVER TOOLTIP GLOSARIUM DI SINI) ---
+        # --- STEP 1: PANEL KENDALI INTERVENSI ---
         st.write("#### 🎛️ Panel Kendali Intervensi Kebijakan:")
         col_a, col_b, col_c, col_d = st.columns(4)
         with col_a: 
@@ -341,9 +341,12 @@ else:
         health_score_pasca = int((1 - (D_aktual_pasca / D_maksimal)) * 100)
         delta_growth = health_score_pasca - health_score_awal
 
-        # --- STEP 4: PANEL METRIK UTAMA ---
+        # --- STEP 4: PERBAIKAN TOTAL TYPEERROR DI SINI (MENGGUNAKAN ST.MARKDOWN) ---
         st.write("---")
-        st.write("#### 📊 Indikator Kesehatan Sistem Kelembagaan (System Health Score):", help="System Health Score: Indikator kuantitatif skala 0-100% untuk mengukur derajat ketahanan, efisiensi alokasi, dan kepatuhan koordinasi di dalam ekosistem.")
+        st.markdown(
+            "#### 📊 Indikator Kesehatan Sistem Kelembagaan (System Health Score):", 
+            help="System Health Score: Indikator kuantitatif skala 0-100% untuk mengukur derajat ketahanan, efisiensi alokasi, dan kepatuhan koordinasi di dalam ekosistem kelembagaan."
+        )
         met1, met2 = st.columns(2)
         with met1:
             st.metric(label="Kesehatan Sistem Aktual (Kondisi Riil)", value=f"{health_score_awal}%", delta="Kondisi Awal", delta_color="inverse")
@@ -352,7 +355,10 @@ else:
 
         # --- STEP 5: VISUALISASI LEDGER ---
         st.write("---")
-        st.write("#### 📜 Policy Impact Ledger (Daftar Jejak Dampak Kebijakan):", help="Policy Impact Ledger: Buku jejak dinamis untuk merekam perbandingan status anomali relasi sebelum vs sesudah intervensi solusi.")
+        st.markdown(
+            "#### 📜 Policy Impact Ledger (Daftar Jejak Dampak Kebijakan):", 
+            help="Policy Impact Ledger: Buku jejak dinamis untuk merekam perbandingan status anomali relasi aktor sebelum vs sesudah intervensi solusi dijalankan."
+        )
         if not ledger_data:
             st.success("✅ **Sistem Konstitusi Aman:** Tidak ditemukan kontradiksi relasi strategis. Struktur tata kelola berada pada efisiensi *Pareto Optimal*.")
         else:
@@ -361,7 +367,10 @@ else:
 
         # --- STEP 6: SIMULASI MATRIKS IDEAL ---
         st.write("---")
-        st.write("#### 📊 Panduan Konfigurasi Matriks Ideal (Target Kuantitatif Struktur)", help="Matriks Ideal: Kompas rujukan normatif tertulis mengenai ke mana arah angka kolaborasi dan konflik harus diubah di dunia nyata lewat instrumen hukum formal.")
+        st.markdown(
+            "#### 📊 Panduan Konfigurasi Matriks Ideal (Target Kuantitatif Struktur)", 
+            help="Matriks Ideal: Kompas rujukan normatif tertulis mengenai ke mana arah angka kolaborasi dan konflik harus diubah di dunia nyata lewat instrumen draf hukum formal (Perda/Kontrak)."
+        )
         st.caption("Gunakan tab di bawah ini untuk melihat bagaimana angka-angka parameter sel matriks bertransformasi dari kondisi empiris saat ini menuju struktur ideal regulasi yang direkomendasikan.")
 
         # Duplikasi matriks untuk simulasi ideal virtual di memori jangka pendek
