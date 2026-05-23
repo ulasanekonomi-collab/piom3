@@ -16,53 +16,44 @@ st.sidebar.caption("Ekonomi Pembangunan Unisba @2026")
 st.sidebar.write("---")
 
 # ==========================================
-# LOGIKA STRUKTUR DATA (FIXED RERUN BUG)
+# 1. INISIALISASI STATE UTAMA (AMANKAN MEMORI)
 # ==========================================
 if "actors" not in st.session_state:
     st.session_state.actors = []
 
-# Daftarkan semua nama matriks relasi
-matrix_names = ["matrix_collaboration", "matrix_influence", "matrix_conflict", "matrix_power"]
+matrix_keys = ["matrix_atribut", "matrix_collaboration", "matrix_influence", "matrix_conflict", "matrix_power"]
 
-# Fungsi sinkronisasi ukuran matriks hanya jika jumlah aktor berubah
-def sync_matrices():
-    actors = st.session_state.actors
+# Fungsi murni untuk membuat kerangka DataFrame kosong sesuai jumlah aktor terkini
+def create_empty_df(matrix_name, actors):
     n = len(actors)
-    
-    # 1. Sinkronisasi Matriks Atribut
-    if "matrix_atribut" not in st.session_state:
-        st.session_state.matrix_atribut = pd.DataFrame(
-            {"Tipe Lembaga": ["Formal"] * n, "Peran Utama": ["Regulator"] * n},
-            index=actors
-        )
+    if matrix_name == "matrix_atribut":
+        return pd.DataFrame({"Tipe Lembaga": ["Formal"] * n, "Peran Utama": ["Regulator"] * n}, index=actors)
     else:
-        old_attr = st.session_state.matrix_atribut
-        new_attr = pd.DataFrame({"Tipe Lembaga": ["Formal"] * n, "Peran Utama": ["Regulator"] * n}, index=actors)
-        for r in old_attr.index:
-            if r in new_attr.index:
-                new_attr.loc[r] = old_attr.loc[r]
-        st.session_state.matrix_atribut = new_attr
+        return pd.DataFrame(0, index=actors, columns=actors)
 
-    # 2. Sinkronisasi Matriks Relasional (CICP)
-    for name in matrix_names:
-        # Tentukan default value berdasarkan jenis matriks
-        default_val = 0
-        
-        if name not in st.session_state:
-            st.session_state[name] = pd.DataFrame(np.full((n, n), default_val), index=actors, columns=actors)
+# Fungsi untuk mendongkrak data lama ke struktur susunan aktor yang baru
+def update_matrix_structure():
+    actors = st.session_state.actors
+    for key in matrix_keys:
+        if key not in st.session_state:
+            st.session_state[key] = create_empty_df(key, actors)
         else:
-            old_df = st.session_state[name]
-            # Jika susunan aktor berubah, buat rangka baru dan salin data lama
-            if not old_df.index.equals(pd.Index(actors)):
-                new_df = pd.DataFrame(default_val, index=actors, columns=actors)
-                for r in old_df.index:
-                    for c in old_df.columns:
-                        if r in new_df.index and c in new_df.columns:
-                            new_df.loc[r, c] = old_df.loc[r, c]
-                st.session_state[name] = new_df
+            old_df = st.session_state[key]
+            new_df = create_empty_df(key, actors)
+            # Salin data lama yang selnya masih cocok dengan susunan aktor baru
+            for r in old_df.index:
+                if r in new_df.index:
+                    if key == "matrix_atribut":
+                        new_df.loc[r] = old_df.loc[r]
+                    else:
+                        for c in old_df.columns:
+                            if c in new_df.columns:
+                                new_df.loc[r, c] = old_df.loc[r, c]
+            st.session_state[key] = new_df
 
-# Jalankan sinkronisasi data awal
-sync_matrices()
+# Pastikan struktur data selalu siap semenjak aplikasi dibuka
+if len(st.session_state.actors) > 0 and "matrix_power" not in st.session_state:
+    update_matrix_structure()
 
 # ==========================================
 # 2. MANAJEMEN AKTOR (SIDEBAR)
@@ -74,7 +65,7 @@ with st.sidebar.form("add_actor_form", clear_on_submit=True):
     if submit_actor and new_actor:
         if new_actor not in st.session_state.actors:
             st.session_state.actors.append(new_actor)
-            sync_matrices()  # Sinkronisasikan struktur matriks saat aktor ditambah
+            update_matrix_structure() # Perbarui dan kunci rangka matriks
             st.rerun()
 
 st.sidebar.write("**Daftar Aktor Aktif:**")
@@ -100,6 +91,18 @@ cicp_full_options = list(range(-5, 6))
 cicp_positive_options = list(range(0, 6))
 cicp_negative_options = list(range(-5, 1))
 
+# Fungsi Callback Khusus: Memaksa Streamlit mengunci hasil editan secara instan ke State
+def save_changes(key_name, editor_state_name):
+    if editor_state_name in st.session_state and st.session_state[editor_state_name]["edited_rows"]:
+        updates = st.session_state[editor_state_name]["edited_rows"]
+        df = st.session_state[key_name]
+        for row_idx, col_data in updates.items():
+            # Jika yang diedit adalah indeks (berlaku untuk dataframe)
+            row_name = df.index[int(row_idx)] if isinstance(row_idx, (int, str)) and int(row_idx) < len(df) else df.index[row_idx]
+            for col_name, val in col_data.items():
+                df.loc[row_name, col_name] = val
+        st.session_state[key_name] = df
+
 if len(st.session_state.actors) == 0:
     for i in range(6):
         with tabs[i]:
@@ -108,7 +111,13 @@ else:
     # --- TAB 2: MATRIKS AKTOR (ATRIBUT) ---
     with tabs[0]:
         st.subheader("Matriks Profil & Atribut Aktor")
-        edited_attr = st.data_editor(st.session_state.matrix_atribut, use_container_width=True, key="editor_attr")
+        edited_attr = st.data_editor(
+            st.session_state.matrix_atribut, 
+            use_container_width=True, 
+            key="editor_attr_state",
+            on_change=save_changes,
+            args=("matrix_atribut", "editor_attr_state")
+        )
         st.session_state.matrix_atribut = edited_attr
 
     # --- TAB 3: COLLABORATION ---
@@ -116,7 +125,14 @@ else:
         st.subheader("Matriks Kolaborasi Antar-Aktor (Collaboration)")
         df_collab = st.session_state.matrix_collaboration
         config_collab = {col: st.column_config.SelectboxColumn(options=cicp_positive_options, width="medium") for col in df_collab.columns}
-        edited_collab = st.data_editor(df_collab, column_config=config_collab, use_container_width=True, key="editor_collab")
+        edited_collab = st.data_editor(
+            df_collab, 
+            column_config=config_collab, 
+            use_container_width=True, 
+            key="editor_collab_state",
+            on_change=save_changes,
+            args=("matrix_collaboration", "editor_collab_state")
+        )
         st.session_state.matrix_collaboration = edited_collab
 
     # --- TAB 4: INFLUENCE ---
@@ -124,7 +140,14 @@ else:
         st.subheader("Matriks Pengaruh Antar-Aktor (Influence)")
         df_inf = st.session_state.matrix_influence
         config_inf = {col: st.column_config.SelectboxColumn(options=cicp_full_options, width="medium") for col in df_inf.columns}
-        edited_inf = st.data_editor(df_inf, column_config=config_inf, use_container_width=True, key="editor_inf")
+        edited_inf = st.data_editor(
+            df_inf, 
+            column_config=config_inf, 
+            use_container_width=True, 
+            key="editor_inf_state",
+            on_change=save_changes,
+            args=("matrix_influence", "editor_inf_state")
+        )
         st.session_state.matrix_influence = edited_inf
 
     # --- TAB 5: CONFLICT ---
@@ -132,7 +155,14 @@ else:
         st.subheader("Matriks Konflik Kepentingan Antar-Aktor (Conflict)")
         df_conf = st.session_state.matrix_conflict
         config_conf = {col: st.column_config.SelectboxColumn(options=cicp_negative_options, width="medium") for col in df_conf.columns}
-        edited_conf = st.data_editor(df_conf, column_config=config_conf, use_container_width=True, key="editor_conf")
+        edited_conf = st.data_editor(
+            df_conf, 
+            column_config=config_conf, 
+            use_container_width=True, 
+            key="editor_conf_state",
+            on_change=save_changes,
+            args=("matrix_conflict", "editor_conf_state")
+        )
         st.session_state.matrix_conflict = edited_conf
 
     # --- TAB 6: POWER ---
@@ -140,7 +170,14 @@ else:
         st.subheader("Matriks Kekuasaan/Otoritas Antar-Aktor (Power)")
         df_pow = st.session_state.matrix_power
         config_pow = {col: st.column_config.SelectboxColumn(options=cicp_full_options, width="medium") for col in df_pow.columns}
-        edited_pow = st.data_editor(df_pow, column_config=config_pow, use_container_width=True, key="editor_pow")
+        edited_pow = st.data_editor(
+            df_pow, 
+            column_config=config_pow, 
+            use_container_width=True, 
+            key="editor_pow_state",
+            on_change=save_changes,
+            args=("matrix_power", "editor_pow_state")
+        )
         st.session_state.matrix_power = edited_pow
 
     # --- TAB 7: OUTPUT ANALISIS PUBLIC CHOICE (BUCHANAN-TULLOCK) ---
