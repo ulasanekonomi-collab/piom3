@@ -284,16 +284,16 @@ else:
                 # Deteksi Kasus 1: Information Hoarding
                 if inf_val >= 4 and collab_val <= 1:
                     tc_logs.append({
-                        "Arah Hubungan": f"{actA} $\\rightarrow$ {actB}",
+                        "Arah Hubungan": f"{actA} → {actB}", # Menggunakan panah teks standar
                         "Indikator Penyakit": "🚨 Information Hoarding",
                         "Deskripsi Analisis": f"{actA} memancarkan daya lobi/pengaruh yang kuat ({inf_val}) terhadap {actB}, namun menahan level kolaborasi riil di tingkat minimal ({collab_val}). Terindikasi memanfaatkan asimetri informasi untuk mengunci posisi tawar."
                     })
                 
-                # Deteksi Kasus 2: High Transaction Cost Barrier (Hanya dicek sekali per pasangan aktor)
+                # Deteksi Kasus 2: High Transaction Cost Barrier
                 if actA < actB:
                     if (inf_val >= 3 or inf_reverse >= 3) and (collab_val == 0 and collab_reverse == 0):
                         tc_logs.append({
-                            "Arah Hubungan": f"{actA} $\\leftrightarrow$ {actB}",
+                            "Arah Hubungan": f"{actA} ↔ {actB}", # Menggunakan panah teks standar
                             "Indikator Penyakit": "⚠️ High Transaction Cost Barrier",
                             "Deskripsi Analisis": f"Kedua aktor saling memiliki keterikatan pengaruh horizontal yang kuat, namun level kolaborasi dua arah terkunci di angka 0. Tingginya sekat birokrasi atau 'distrust' membuat biaya transaksi koordinasi lebih mahal daripada insentif kerjasamanya."
                         })
