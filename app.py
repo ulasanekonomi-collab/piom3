@@ -341,7 +341,7 @@ else:
         health_score_pasca = int((1 - (D_aktual_pasca / D_maksimal)) * 100)
         delta_growth = health_score_pasca - health_score_awal
 
-        # --- STEP 4: PERBAIKAN TOTAL TYPEERROR DI SINI (MENGGUNAKAN ST.MARKDOWN) ---
+        # --- STEP 4: PANEL METRIK UTAMA ---
         st.write("---")
         st.markdown(
             "#### 📊 Indikator Kesehatan Sistem Kelembagaan (System Health Score):", 
@@ -365,7 +365,7 @@ else:
             df_ledger = pd.DataFrame(ledger_data)
             st.dataframe(df_ledger, use_container_width=True)
 
-        # --- STEP 6: SIMULASI MATRIKS IDEAL ---
+        # --- STEP 6: FIX TATA LETAK KAMUS MATRIKS IDEAL (RESOLVED) ---
         st.write("---")
         st.markdown(
             "#### 📊 Panduan Konfigurasi Matriks Ideal (Target Kuantitatif Struktur)", 
@@ -404,7 +404,7 @@ else:
                 if "Linking" in item["Tipe"]:
                     ideal_collab.loc[actA, actB] = 4
 
-        # Tampilan Tab Interaktif
+        # Perbaikan Lokasi Kamar Variabel Tab Samping (Isolated Layout)
         tab_mat_conf, tab_mat_collab = st.tabs(["🔒 Komparasi Matriks Konflik (Conflict Matrix)", "🤝 Komparasi Matriks Kolaborasi (Collaboration Matrix)"])
         
         with tab_mat_conf:
@@ -414,16 +414,16 @@ else:
                 st.dataframe(m_conf, use_container_width=True)
             with c_right:
                 st.write("**Target Matriks Konflik Pasca Regulasi (Konfigurasi Ideal):**")
-                st.dataframe(ideal_conflict, use_container_width=True)
+                st.dataframe(ideal_conflict, use_container_width=True) # FIXED: Kamar Konflik Kanan Aman
                 
         with tab_mat_collab:
             col_left, col_right = st.columns(2)
             with col_left:
                 st.write("**Matriks Kolaborasi Saat Ini (Kondisi Riil Pengguna):**")
                 st.dataframe(m_collab, use_container_width=True)
-            with c_right:
+            with col_right:
                 st.write("**Target Matriks Kolaborasi Pasca Regulasi (Konfigurasi Ideal):**")
-                st.dataframe(ideal_collab, use_container_width=True)
+                st.dataframe(ideal_collab, use_container_width=True) # FIXED: Kamar Kolaborasi Kanan Terpisah Aman
 
         # --- STEP 7: LEMBAR REKOMENDASI DOKUMEN GENERIK ---
         st.write("---")
