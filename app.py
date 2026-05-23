@@ -365,7 +365,7 @@ else:
             df_ledger = pd.DataFrame(ledger_data)
             st.dataframe(df_ledger, use_container_width=True)
 
-        # --- STEP 6: FIX TATA LETAK KAMUS MATRIKS IDEAL (RESOLVED) ---
+        # --- STEP 6: SIMULASI MATRIKS IDEAL ---
         st.write("---")
         st.markdown(
             "#### 📊 Panduan Konfigurasi Matriks Ideal (Target Kuantitatif Struktur)", 
@@ -404,7 +404,7 @@ else:
                 if "Linking" in item["Tipe"]:
                     ideal_collab.loc[actA, actB] = 4
 
-        # Perbaikan Lokasi Kamar Variabel Tab Samping (Isolated Layout)
+        # Tampilan Tab Interaktif
         tab_mat_conf, tab_mat_collab = st.tabs(["🔒 Komparasi Matriks Konflik (Conflict Matrix)", "🤝 Komparasi Matriks Kolaborasi (Collaboration Matrix)"])
         
         with tab_mat_conf:
@@ -414,7 +414,7 @@ else:
                 st.dataframe(m_conf, use_container_width=True)
             with c_right:
                 st.write("**Target Matriks Konflik Pasca Regulasi (Konfigurasi Ideal):**")
-                st.dataframe(ideal_conflict, use_container_width=True) # FIXED: Kamar Konflik Kanan Aman
+                st.dataframe(ideal_conflict, use_container_width=True)
                 
         with tab_mat_collab:
             col_left, col_right = st.columns(2)
@@ -423,36 +423,40 @@ else:
                 st.dataframe(m_collab, use_container_width=True)
             with col_right:
                 st.write("**Target Matriks Kolaborasi Pasca Regulasi (Konfigurasi Ideal):**")
-                st.dataframe(ideal_collab, use_container_width=True) # FIXED: Kamar Kolaborasi Kanan Terpisah Aman
+                st.dataframe(ideal_collab, use_container_width=True)
 
-        # --- STEP 7: LEMBAR REKOMENDASI DOKUMEN GENERIK ---
+        # --- STEP 7: UPDATE LOGIKA REKOMENDASI TERISOLASI BERBASIS MATRIKS IDEAL ---
         st.write("---")
-        st.write("#### 🏛️ Lembar Rekomendasi Cetak Biru Kebijakan:")
+        st.write("#### 🏛️ Lembar Panduan Rekayasa Struktur Kebijakan:")
         unique_types = set([item["Tipe"] for item in raw_anomalies])
         
         if not unique_types:
-            st.info("Seluruh ekosistem bersih dari anomali struktural.")
+            st.info("Seluruh ekosistem bersih dari anomali struktural. Hubungan antar-aktor berada pada efisiensi alokatif tertinggi.")
         else:
-            if "⚠️ Institutional Deadlock" in unique_types or "🚨 Institutional Exclusion" in unique_types:
-                with st.expander("🏛️ KLASTER A: Jurisdictional Harmonization & Property Rights Redesign", expanded=True):
-                    st.write("**Rekomendasi Dokumen Hukum (Clear-cut Boundaries):**")
-                    st.write("- Terbitkan Surat Keputusan (SK) Bersama Kepala Daerah atau Peraturan Daerah (Perda) baru untuk memotong tumpang tindih otoritas regulasi di lapangan.")
-                    st.write("- Berikan kepastian hukum formal tertulis bagi hak kelola pranata informal/lokal guna menghindari peminggiran sepihak.")
+            # Menggunakan generator teks dinamis yang memanggil nama aktor secara otomatis sesuai teori universal NIE
+            for item in raw_anomalies:
+                actA, actB, tipe_ano, klaster = item["AktorA"], item["AktorB"], item["Tipe"], item["Klaster"]
+                
+                if klaster == "Paket A":
+                    with st.expander(f"🏛️ INTERVENSI KLASTER A (Property Rights Redesign): {actA} ↔ {actB}", expanded=True):
+                        st.write(f"**Diagnosis Masalah:** Terdeteksi anomali struktural **{tipe_ano}** pada koordinat hubungan faksi tersebut.")
+                        st.write(f"- **Target Kuantitatif:** Anda wajib merekayasa nilai sel **Conflict({actA}, {actB})** dari posisi aktual saat ini menuju ke target konfigurasi ideal **`0` (Netral/Harmonis)**.")
+                        st.write("- **Rekomendasi Dokumen Hukum:** Terbitkan atau sesuaikan aturan formal tertulis (seperti Surat Keputusan Bersama, Peraturan Daerah, atau Statuta Lembaga) yang memotong tumpang tindih batas yurisdiksi kewenangan secara tegas guna memberikan kepastian hak kelola eksklusif.")
+                
+                elif klaster == "Paket B":
+                    with st.expander(f"📊 INTERVENSI KLASTER B (Transaction Cost Reduction): {actA} → {actB}", expanded=True):
+                        st.write(f"**Diagnosis Masalah:** Terdeteksi anomali struktural **{tipe_ano}** berupa penyumbatan sirkulasi data harian.")
+                        st.write(f"- **Target Kuantitatif:** Anda wajib memaksa peningkatan nilai sel **Collaboration({actA}, {actB})** menuju ke batas efisiensi minimal **`3` atau `4` (Kemitraan Terbuka)**.")
+                        st.write("- **Rekomendasi Dokumen Hukum:** Klausul regulasi wajib mengamanatkan pembuatan platform pangkalan data terpadu tunggal (*Open-Data Manifest*) serta kewajiban audit transparansi operasional secara berkala guna melenyapkan perilaku asimetri informasi dan memangkas tingginya biaya pengawasan.")
 
-            if "🚨 Information Hoarding" in unique_types or "⚠️ High Transaction Cost Barrier" in unique_types:
-                with st.expander("📊 KLASTER B: Information Symmetry & Transaction Cost Reduction", expanded=True):
-                    st.write("**Rekomendasi Dokumen Aturan (Open-Data Manifest):**")
-                    st.write("- Wajibkan audit transparansi data volume hulu-hilir sebagai klausul mutlak pemberian izin operasional konsesi swasta.")
-                    st.write("- Bangun platform pangkalan data digital tunggal terintegrasi untuk memangkas tingginya biaya transaksi birokrasi.")
+                elif klaster == "Paket C":
+                    with st.expander(f"📜 INTERVENSI KLASTER C (Anti-Capture Accountability): {actA} → {actB}", expanded=True):
+                        st.write(f"**Diagnosis Masalah:** Terdeteksi anomali struktural **{tipe_ano}** yang berisiko memicu tindakan oportunistik (*moral hazard/shirking*).")
+                        st.write(f"- **Target Kuantitatif:** Anda wajib memangkas daya pengaruh balik tak sehat pada sel **Influence({actB}, {actA})** agar merosot ke angka aman **`<= 1`**.")
+                        st.write("- **Rekomendasi Dokumen Hukum:** Struktur kontrak kerja sama wajib diubah radikal dari model penyerapan anggaran konvensional administratif menjadi skema *Performance-Based Contracting* (Kontrak Kinerja Berbasis Output Riil) untuk memutus rantai pembajakan regulasi oleh Pelaksana.")
 
-            if "🚨 Potential Agency Capture" in unique_types:
-                with st.expander("📜 KLASTER C: Performance-Based Accountability (Anti-Capture Mechanism)", expanded=True):
-                    st.write("**Rekomendasi Dokumen Kontrak (Performance Contracting):**")
-                    st.write("- Ubah model ikatan kerja sama operasional dengan pihak ketiga dari sistem serapan anggaran konvensional menjadi *Performance-Based Contracting* berbasis output riil bersih.")
-                    st.write("- Bentuk komisi pengawas independen tripartit guna memutus rantai pembajakan regulasi.")
-
-            if "🚨 Low Linking Capital" in unique_types:
-                with st.expander("🌱 KLASTER D: Ostromian Co-Management & Social Trust Integration", expanded=True):
-                    st.write("**Rekomendasi Dokumen Pengelolaan (Polycentric Governance):**")
-                    st.write("- Cegah pemaksaan penegakan aturan hukum *top-down* yang kaku ketika tingkat kepercayaan vertikal berada di titik nadir.")
-                    st.write("- Pelembagakan mekanisme Pengelolaan Bersama (*Co-Management*) dengan memberikan jaminan kuota zonasi wilayah kerja resmi bagi komunitas lokal.")
+                elif klaster == "Paket D":
+                    with st.expander(f"🌱 INTERVENSI KLASTER D (Social Capital Integration): {actA} → {actB}", expanded=True):
+                        st.write(f"**Diagnosis Masalah:** Terdeteksi anomali struktural **{tipe_ano}** akibat keretakan jalinan modal sosial vertikal/horizontal.")
+                        st.write(f"- **Target Kuantitatif:** Anda wajib memulihkan nilai sel jalinan komunikasi **Collaboration({actA}, {actB})** dari angka keterasingan harian menuju target koordinasi sehat **`>= 3`**.")
+                        st.write("- **Rekomendasi Dokumen Hukum:** Hentikan pemaksaan penegakan aturan hukum sepihak yang kaku (*top-down regulatory*). Lembagakan skema Pengelolaan Bersama (*Co-Management* atau *Polycentric Governance*) dengan memberikan ruang insentif timbal-balik yang menguntungkan pranata informal tapak guna membangun kembali fondasi kepercayaan sosial (*Social Trust*).")
