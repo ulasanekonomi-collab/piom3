@@ -166,8 +166,8 @@ else:
             elif p_formal >= 4 and collab_reverse == 0:
                 all_diseases.append("⚠️ Indikasi Moral Hazard (Shirking)")
 
-            # Lacak Penyakit Social Capital
-            if i < j and typeA == "Informal" and typeB == "Informal" and collab_AB <= 1 and collab_BA <= 1:
+            # Lacak Penyakit Social Capital (FIXED VARIABEL TYPO DI SINI)
+            if i < j and typeA == "Informal" and typeB == "Informal" and collab_val <= 1 and collab_reverse <= 1:
                 all_diseases.append("🚨 Low Bridging Capital")
             if typeA == "Formal" and typeB == "Informal" and collab_reverse == 0:
                 all_diseases.append("🚨 Low Linking Capital")
@@ -297,9 +297,14 @@ else:
         for actA in actors:
             for actB in actors:
                 if actA == actB: continue
-                if actA < actB and m_attr.loc[actA, "Tipe Lembaga"] == "Informal" and m_attr.loc[actB, "Tipe Lembaga"] == "Informal" and m_collab.loc[actA, actB] <= 1 and m_collab.loc[actB, actA] <= 1:
+                collab_val = m_collab.loc[actA, actB]
+                collab_reverse = m_collab.loc[actB, actA]
+                typeA = m_attr.loc[actA, "Tipe Lembaga"]
+                typeB = m_attr.loc[actB, "Tipe Lembaga"]
+                
+                if actA < actB and typeA == "Informal" and typeB == "Informal" and collab_val <= 1 and collab_reverse <= 1:
                     sc_logs.append({"Jejaring Relasional": f"{actA} ↔ {actB}", "Kerusakan Jaringan": "🚨 Low Bridging Capital", "Deskripsi Diagnosis": "Terjadi fragmentasi sosial akut (silo komunitas) di tingkat tapak."})
-                if m_attr.loc[actA, "Tipe Lembaga"] == "Formal" and m_attr.loc[actB, "Tipe Lembaga"] == "Informal" and m_collab.loc[actB, actA] == 0:
+                if typeA == "Formal" and typeB == "Informal" and collab_reverse == 0:
                     sc_logs.append({"Jejaring Relasional": f"{actB} (Informal) → {actA} (Formal)", "Kerusakan Jaringan": "🚨 Low Linking Capital", "Deskripsi Diagnosis": "Saluran kemitraan vertikal menuju regulator formal bernilai murni 0. Risiko distrust masif."})
         if len(sc_logs) == 0: st.success("✅ **Kesehatan Sosial Terjamin:** Tingkat modal sosial (Social Trust) berada pada kapasitas optimal.")
         else:
@@ -317,33 +322,27 @@ else:
     if len(all_diseases) == 0:
         st.success("✅ **Sistem Konstitusi Aman:** Tidak ditemukan kontradiksi relasi strategis horizontal maupun vertikal. Struktur tata kelola berada pada efisiensi *Pareto Optimal*.")
     else:
-        # Menghapus duplikasi alarm agar klaster solusi rapi
         unique_diseases = set(all_diseases)
-        
         st.error(f"🚨 **Hasil Diagnosis Sintesis Lintas Domain:** Terdeteksi indikasi kerusakan tata kelola sistemik. Berikut rekomendasi paket reformasi kelembagaan:")
         
-        # Klaster A: Redesain Aturan Hukum Formal (Williamson Level 2)
         if "⚠️ Institutional Deadlock" in unique_diseases or "🚨 Institutional Exclusion" in unique_diseases:
             with st.expander("🏛️ KLASTER A: Jurisdictional Harmonization & Property Rights Redesign", expanded=True):
                 st.write("**Rekomendasi Utama (Clear-cut Boundaries):**")
                 st.write("- Terbitkan Peraturan Daerah (Perda) atau Peraturan Bersama Kepala Daerah baru untuk memotong tumpang tindih jurisdiksi yang memicu *deadlock*.")
                 st.write("- Legalitas hak kelola faksi lokal/informal wajib diakui secara resmi melalui kepastian hukum tertulis agar terhindar dari peminggiran sepihak (*Institutional Exclusion*).")
 
-        # Klaster B: Mekanisme Transparansi & Simetri Informasi (Williamson Level 3)
         if "🚨 Information Hoarding" in unique_diseases or "⚠️ High Transaction Cost Barrier" in unique_diseases:
             with st.expander("📊 KLASTER B: Information Symmetry & Transaction Cost Reduction", expanded=True):
                 st.write("**Rekomendasi Utama (Open-Data Manifest):**")
                 st.write("- Batasi keunggulan asimetri swasta dengan mewajibkan transparansi data hulu-hilir (volume sampah riil, neraca keuangan sirkular) sebagai syarat mutlak perpanjangan konsesi.")
                 st.write("- Sediakan platform data digital satu pintu untuk memangkas tingginya biaya transaksi koordinasi antar-instansi birokrasi.")
 
-        # Klaster C: Akuntabilitas & Penyelarasan Insentif Kontrak (Williamson Level 3)
         if "🚨 Potential Agency Capture" in unique_diseases or "⚠️ Indikasi Moral Hazard (Shirking)" in unique_diseases:
             with st.expander("📜 KLASTER C: Performance-Based Accountability (Anti-Capture Mechanism)", expanded=True):
                 st.write("**Rekomendasi Utama (Performance Contracting):**")
                 st.write("- Transformasikan seluruh ikatan kerja sama operasional dengan pihak ketiga/Agen dari pola serapan anggaran konvensional beralih menuju *Performance-Based Contracting* (insentif dibayarkan berbasis output riil bersih di lapangan).")
                 st.write("- Lembagakan dewan pengawas tripartit independen (pemerintah, akademisi, perwakilan warga) untuk mematahkan fenomena pembajakan regulasi (*Agency Capture*).")
 
-        # Klaster D: Kemitraan Kolaboratif & Penguatan Modal Sosial (Williamson Level 1)
         if "🚨 Low Bridging Capital" in unique_diseases or "🚨 Low Linking Capital" in unique_diseases:
             with st.expander("🌱 KLASTER D: Ostromian Co-Management & Social Trust Integration", expanded=True):
                 st.write("**Rekomendasi Utama (Polycentric Governance):**")
