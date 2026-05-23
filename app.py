@@ -76,7 +76,7 @@ else:
 st.sidebar.write("---")
 
 # ==========================================
-# SIDEBAR: NAVIGASI MENU UTAMA
+# SIDEBAR: NAVIGASI MENU UTAMA (TAMBAH MENU FINAL)
 # ==========================================
 st.sidebar.header("2. Menu Navigasi")
 menu_pilihan = st.sidebar.radio(
@@ -91,7 +91,8 @@ menu_pilihan = st.sidebar.radio(
         "Analisis: Property Rights (NIE)",
         "Analisis: Transaction Cost & Info",
         "Analisis: Principal-Agent (NIE)",
-        "Analisis: Social Capital & Informal"
+        "Analisis: Social Capital & Informal",
+        "🎯 Cetak Biru: Solusi Kelembagaan" # Menu Mandiri Baru di Paling Bawah
     ]
 )
 
@@ -118,9 +119,6 @@ def save_changes(key_name, editor_state_name):
 if len(st.session_state.actors) == 0:
     st.info("Silakan masukkan minimal satu nama aktor di menu samping (sidebar) terlebih dahulu untuk membuka instrumen.")
 else:
-    # Inisialisasi list penampung penyakit global untuk Therapeutic Engine
-    all_diseases = []
-
     # --- JALANKAN PROSES DIAGNOSIS BACKGROUND SECARA LATEN UNTUK RESERVOIR SOLUSI ---
     m_pow = st.session_state.matrix_power
     m_inf = st.session_state.matrix_influence
@@ -129,13 +127,13 @@ else:
     m_attr = st.session_state.matrix_atribut
     actors = st.session_state.actors
 
+    all_diseases = []
+
     for i in range(len(actors)):
         for j in range(len(actors)):
             if i == j: continue
-            actA = actors[i]
-            actB = actors[j]
+            actA, actB = actors[i], actors[j]
             
-            # Extract data relasi terarah
             p_formal = m_pow.loc[actA, actB]
             inf_val = m_inf.loc[actA, actB]
             collab_val = m_collab.loc[actA, actB]
@@ -149,29 +147,30 @@ else:
             typeA = m_attr.loc[actA, "Tipe Lembaga"]
             typeB = m_attr.loc[actB, "Tipe Lembaga"]
 
-            # Lacak Penyakit Property Rights
+            # 1. Property Rights
             if i < j:
                 if (c_A_to_B <= -4 or c_B_to_A <= -4) and (p_formal >= 4 and p_reverse >= 4):
                     all_diseases.append("⚠️ Institutional Deadlock")
+                if (c_A_to_B <= -3 or c_B_to_A <= -3) and ((p_formal >= 4 and p_reverse == 0) or (p_reverse >= 4 and p_formal == 0)):
+                    all_diseases.append("🚨 Institutional Exclusion")
             
-            # Lacak Penyakit Transaction Cost
+            # 2. Transaction Cost
             if inf_val >= 4 and collab_val <= 1:
                 all_diseases.append("🚨 Information Hoarding")
             if i < j and (inf_val >= 3 or inf_reverse >= 3) and (collab_val == 0 and collab_reverse == 0):
                 all_diseases.append("⚠️ High Transaction Cost Barrier")
 
-            # Lacak Penyakit Principal Agent
+            # 3. Principal Agent
             if p_formal >= 4 and inf_reverse >= 4:
                 all_diseases.append("🚨 Potential Agency Capture")
             elif p_formal >= 4 and collab_reverse == 0:
                 all_diseases.append("⚠️ Indikasi Moral Hazard (Shirking)")
 
-            # Lacak Penyakit Social Capital (FIXED VARIABEL TYPO DI SINI)
+            # 4. Social Capital
             if i < j and typeA == "Informal" and typeB == "Informal" and collab_val <= 1 and collab_reverse <= 1:
                 all_diseases.append("🚨 Low Bridging Capital")
             if typeA == "Formal" and typeB == "Informal" and collab_reverse == 0:
                 all_diseases.append("🚨 Low Linking Capital")
-
 
     # ==========================================
     # KONTEN INTERFASE ROUTING MENU UTAMA
@@ -218,7 +217,6 @@ else:
     # --- MENU: ANALISIS PUBLIC CHOICE ---
     elif menu_pilihan == "Analisis: Power & Public Choice":
         st.subheader("Analisis Peta Kekuasaan & Pilihan Publik (Public Choice)")
-        st.markdown("Mengacu pada kerangka pemikiran **James Buchanan & Gordon Tullock**, grafik memetakan posisi aktor berdasarkan akumulasi Otoritas Formal (Power) vs Kapasitas Lobi (Influence).")
         summary_data = []
         for actor in actors:
             sum_inf_out = m_inf.loc[actor].sum()
@@ -313,38 +311,38 @@ else:
 
 
     # ==========================================
-    # CORE ENGINE UTAMA: THERAPEUTIC SOLUTION GENERATOR
+    # --- ISOLASI TOTAL: MENU MANDIRI RESERVOIR SOLUSI ---
     # ==========================================
-    st.write("---")
-    st.header("3. Executive Policy Brief & Rekomendasi Solusi Kelembagaan")
-    st.markdown("Menggunakan sintesis kumulatif lintas domain (**Ostromian Polycentricity & Williamson L1-L3 Framework**), sistem merumuskan cetak biru resep solusi otomatis:")
+    elif menu_pilihan == "🎯 Cetak Biru: Solusi Kelembagaan":
+        st.subheader("Cetak Biru Tata Kelola & Rekomendasi Solusi Kelembagaan")
+        st.markdown("Menggunakan sintesis komposit lintas domain (**Ostromian Polycentricity & Williamson L1-L3 Framework**), sistem merumuskan paket draf kebijakan otomatis berdasarkan indikasi anomali aktif:")
 
-    if len(all_diseases) == 0:
-        st.success("✅ **Sistem Konstitusi Aman:** Tidak ditemukan kontradiksi relasi strategis horizontal maupun vertikal. Struktur tata kelola berada pada efisiensi *Pareto Optimal*.")
-    else:
-        unique_diseases = set(all_diseases)
-        st.error(f"🚨 **Hasil Diagnosis Sintesis Lintas Domain:** Terdeteksi indikasi kerusakan tata kelola sistemik. Berikut rekomendasi paket reformasi kelembagaan:")
-        
-        if "⚠️ Institutional Deadlock" in unique_diseases or "🚨 Institutional Exclusion" in unique_diseases:
-            with st.expander("🏛️ KLASTER A: Jurisdictional Harmonization & Property Rights Redesign", expanded=True):
-                st.write("**Rekomendasi Utama (Clear-cut Boundaries):**")
-                st.write("- Terbitkan Peraturan Daerah (Perda) atau Peraturan Bersama Kepala Daerah baru untuk memotong tumpang tindih jurisdiksi yang memicu *deadlock*.")
-                st.write("- Legalitas hak kelola faksi lokal/informal wajib diakui secara resmi melalui kepastian hukum tertulis agar terhindar dari peminggiran sepihak (*Institutional Exclusion*).")
+        if len(all_diseases) == 0:
+            st.success("✅ **Sistem Konstitusi Aman:** Tidak ditemukan kontradiksi relasi strategis horizontal maupun vertikal. Struktur tata kelola berada pada efisiensi *Pareto Optimal*.")
+        else:
+            unique_diseases = set(all_diseases)
+            st.error(f"🚨 **Hasil Diagnosis Sintesis Lintas Domain:** Terdeteksi {len(unique_diseases)} indikasi kerusakan tata kelola sistemik di dalam ekosistem. Berikut draf rekomendasi reformasi kelembagaan:")
+            
+            if "⚠️ Institutional Deadlock" in unique_diseases or "🚨 Institutional Exclusion" in unique_diseases:
+                with st.expander("🏛️ KLASTER A: Jurisdictional Harmonization & Property Rights Redesign", expanded=True):
+                    st.write("**Rekomendasi Utama (Clear-cut Boundaries):**")
+                    st.write("- Terbitkan Peraturan Daerah (Perda) atau Peraturan Bersama Kepala Daerah baru untuk memotong tumpang tindih jurisdiksi yang memicu *deadlock*.")
+                    st.write("- Legalitas hak kelola faksi lokal/informal wajib diakui secara resmi melalui kepastian hukum tertulis agar terhindar dari peminggiran sepihak (*Institutional Exclusion*).")
 
-        if "🚨 Information Hoarding" in unique_diseases or "⚠️ High Transaction Cost Barrier" in unique_diseases:
-            with st.expander("📊 KLASTER B: Information Symmetry & Transaction Cost Reduction", expanded=True):
-                st.write("**Rekomendasi Utama (Open-Data Manifest):**")
-                st.write("- Batasi keunggulan asimetri swasta dengan mewajibkan transparansi data hulu-hilir (volume sampah riil, neraca keuangan sirkular) sebagai syarat mutlak perpanjangan konsesi.")
-                st.write("- Sediakan platform data digital satu pintu untuk memangkas tingginya biaya transaksi koordinasi antar-instansi birokrasi.")
+            if "🚨 Information Hoarding" in unique_diseases or "⚠️ High Transaction Cost Barrier" in unique_diseases:
+                with st.expander("📊 KLASTER B: Information Symmetry & Transaction Cost Reduction", expanded=True):
+                    st.write("**Rekomendasi Utama (Open-Data Manifest):**")
+                    st.write("- Batasi keunggulan asimetri swasta dengan mewajibkan transparansi data hulu-hilir (volume sampah riil, neraca keuangan sirkular) sebagai syarat mutlak perpanjangan konsesi.")
+                    st.write("- Sediakan platform data digital satu pintu untuk memangkas tingginya biaya transaksi koordinasi antar-instansi birokrasi.")
 
-        if "🚨 Potential Agency Capture" in unique_diseases or "⚠️ Indikasi Moral Hazard (Shirking)" in unique_diseases:
-            with st.expander("📜 KLASTER C: Performance-Based Accountability (Anti-Capture Mechanism)", expanded=True):
-                st.write("**Rekomendasi Utama (Performance Contracting):**")
-                st.write("- Transformasikan seluruh ikatan kerja sama operasional dengan pihak ketiga/Agen dari pola serapan anggaran konvensional beralih menuju *Performance-Based Contracting* (insentif dibayarkan berbasis output riil bersih di lapangan).")
-                st.write("- Lembagakan dewan pengawas tripartit independen (pemerintah, akademisi, perwakilan warga) untuk mematahkan fenomena pembajakan regulasi (*Agency Capture*).")
+            if "🚨 Potential Agency Capture" in unique_diseases or "⚠️ Indikasi Moral Hazard (Shirking)" in unique_diseases:
+                with st.expander("📜 KLASTER C: Performance-Based Accountability (Anti-Capture Mechanism)", expanded=True):
+                    st.write("**Rekomendasi Utama (Performance Contracting):**")
+                    st.write("- Transformasikan seluruh ikatan kerja sama operasional dengan pihak ketiga/Agen dari pola serapan anggaran konvensional beralih menuju *Performance-Based Contracting* (insentif dibayarkan berbasis output riil bersih di lapangan).")
+                    st.write("- Lembagakan dewan pengawas tripartit independen (pemerintah, akademisi, perwakilan warga) untuk mematahkan fenomena pembajakan regulasi (*Agency Capture*).")
 
-        if "🚨 Low Bridging Capital" in unique_diseases or "🚨 Low Linking Capital" in unique_diseases:
-            with st.expander("🌱 KLASTER D: Ostromian Co-Management & Social Trust Integration", expanded=True):
-                st.write("**Rekomendasi Utama (Polycentric Governance):**")
-                st.write("- Cegah malpraktik pemaksaan hukum *top-down* yang kaku. Ketika jalinan modal sosial vertikal retak (*Low Linking*), beralihlah ke pendekatan partisipatif.")
-                st.write("- Pelembagakan mekanisme Pengelolaan Bersama (*Co-Management*) dengan memberikan kuota wilayah kerja resmi bagi pranata lokal (seperti paguyuban pengepul/pemulung) sebagai rantai pasok formal daerah.")
+            if "🚨 Low Bridging Capital" in unique_diseases or "🚨 Low Linking Capital" in unique_diseases:
+                with st.expander("🌱 KLASTER D: Ostromian Co-Management & Social Trust Integration", expanded=True):
+                    st.write("**Rekomendasi Utama (Polycentric Governance):**")
+                    st.write("- Cegah malpraktik pemaksaan hukum *top-down* yang kaku. Ketika jalinan modal sosial vertikal retak (*Low Linking*), beralihlah ke pendekatan partisipatif.")
+                    st.write("- Pelembagakan mekanisme Pengelolaan Bersama (*Co-Management*) dengan memberikan kuota wilayah kerja resmi bagi pranata lokal (seperti paguyuban pengepul/pemulung) sebagai rantai pasok formal daerah.")
