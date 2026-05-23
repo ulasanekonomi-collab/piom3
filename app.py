@@ -44,7 +44,10 @@ def update_matrix_structure():
             for r in old_df.index:
                 if r in new_df.index:
                     if key == "matrix_atribut":
-                        new_df.loc[r] = old_df.loc[r]
+                        # Ambil nilai kolom yang ada agar tidak ter-reset
+                        for col in old_df.columns:
+                            if col in new_df.columns:
+                                new_df.loc[r, col] = old_df.loc[r, col]
                     else:
                         for c in old_df.columns:
                             if c in new_df.columns:
@@ -88,7 +91,8 @@ menu_pilihan = st.sidebar.radio(
         "Analisis: Power & Public Choice",
         "Analisis: Property Rights (NIE)",
         "Analisis: Transaction Cost & Info",
-        "Analisis: Principal-Agent (NIE)"
+        "Analisis: Principal-Agent (NIE)",
+        "Analisis: Social Capital & Informal"
     ]
 )
 
@@ -117,8 +121,14 @@ else:
     # --- MENU: ATRIBUT ---
     if menu_pilihan == "Data: Matriks Atribut Aktor":
         st.subheader("Matriks Profil & Atribut Aktor")
+        st.markdown("Tentukan tipe lembaga (**Formal** atau **Informal**) untuk setiap elemen aktor.")
+        df_attr = st.session_state.matrix_atribut
+        config_attr = {
+            "Tipe Lembaga": st.column_config.SelectboxColumn(options=["Formal", "Informal"], width="medium", required=True),
+            "Peran Utama": st.column_config.TextColumn(width="medium")
+        }
         edited_attr = st.data_editor(
-            st.session_state.matrix_atribut, use_container_width=True, key="editor_attr_state",
+            df_attr, column_config=config_attr, use_container_width=True, key="editor_attr_state",
             on_change=save_changes, args=("matrix_atribut", "editor_attr_state")
         )
         st.session_state.matrix_atribut = edited_attr
@@ -306,7 +316,7 @@ else:
             st.write("---")
             st.info("💡 **Rekomendasi Kebijakan (Williamsonian Insight):** Atasi friksi di atas dengan menyusun instruksi kerja bersama, standarisasi data satu pintu, atau penguatan sistem pengawasan independen untuk memangkas *Information Asymmetry*.")
 
-    # --- MENU: ANALISIS PRINCIPAL-AGENT RELATIONSHIP (LOGIKA BARU KELAR!) ---
+    # --- MENU: ANALISIS PRINCIPAL-AGENT RELATIONSHIP ---
     elif menu_pilihan == "Analisis: Principal-Agent (NIE)":
         st.subheader("Analisis Hubungan Keagenan (Principal-Agent Relationship)")
         st.markdown("Mengacu pada tesis **Michael Jensen & William Meckling**, modul ini melacak kerentanan moral hazard di mana pelaksana program (*Agent*) menyimpangkan komitmen, atau mendikte balik pemberi mandat (*Principal*).")
@@ -327,7 +337,6 @@ else:
                 inf_reverse = m_inf.loc[actB, actA]
                 collab_reverse = m_collab.loc[actB, actA]
                 
-                # Kasus 1: Potential Agency Capture (Agen Menjinakkan Pengawas)
                 if p_formal >= 4 and inf_reverse >= 4:
                     pa_logs.append({
                         "Hubungan Struktural": f"{actA} (Principal) → {actB} (Agent)",
@@ -335,7 +344,6 @@ else:
                         "Deskripsi Analisis": f"{actA} memegang otoritas hukum formal ({p_formal}) atas {actB}. Namun, {actB} memancarkan lobi pengaruh balik ekstrem ({inf_reverse}) ke {actA}. Risiko tinggi fungsi pengawasan formal runtuh tersandera kepentingan Agen."
                     })
                 
-                # Kasus 2: Shirking / Implementation Decoupling (Penyimpangan Mandat Terselubung)
                 elif p_formal >= 4 and collab_reverse == 0:
                     pa_logs.append({
                         "Hubungan Struktural": f"{actA} (Principal) → {actB} (Agent)",
@@ -351,3 +359,51 @@ else:
             st.dataframe(df_pa, use_container_width=True)
             st.write("---")
             st.info("💡 **Rekomendasi Kebijakan (Agency-Theory Insight):** Rekonstruksi struktur insentif kontrak kerja dengan beralih ke *Performance-Based Contracting* (insentif berbasis capaian output riil) dan perketat audit pihak ketiga independen.")
+
+    # --- MENU: ANALISIS SOCIAL CAPITAL & INFORMAL (MENU BARU!) ---
+    elif menu_pilihan == "Analisis: Social Capital & Informal":
+        st.subheader("Analisis Modal Sosial & Institusi Informal")
+        st.markdown("Mengacu pada kerangka pemikiran **Robert Putnam & Francis Fukuyama** (Williamson Level 1), modul ini memetakan kekuatan jalinan modal sosial (*Social Trust*) horizontal (*Bridging*) maupun saluran kemitraan vertikal menuju negara (*Linking*).")
+        
+        m_attr = st.session_state.matrix_atribut
+        m_collab = st.session_state.matrix_collaboration
+        actors = st.session_state.actors
+        
+        sc_logs = []
+        
+        for actA in actors:
+            for actB in actors:
+                if actA == actB:
+                    continue
+                
+                typeA = m_attr.loc[actA, "Tipe Lembaga"]
+                typeB = m_attr.loc[actB, "Tipe Lembaga"]
+                collab_AB = m_collab.loc[actA, actB]
+                collab_BA = m_collab.loc[actB, actA]
+                
+                # Kasus 1: Keretakan Horizontal (Low Bridging Capital antara Sesama Entitas Informal)
+                if actA < actB and typeA == "Informal" and typeB == "Informal":
+                    if collab_AB <= 1 and collab_BA <= 1:
+                        sc_logs.append({
+                            "Jejaring Relasional": f"{actA} ↔ {actB}",
+                            "Kerusakan Jaringan": "🚨 Low Bridging Capital",
+                            "Deskripsi Diagnosis": f"Kedua faksi berstatus kelembagaan Informal/Akar Rumput, namun intensitas koordinasi dua arah macet ({collab_AB} & {collab_BA}). Terindikasi terjadi fragmentasi sosial akut (*silo komunitas*) di tingkat tapak."
+                        })
+                
+                # Kasus 2: Saluran Aspirasi Tersumbat (Low Linking Capital dari Informal ke Formal)
+                if typeA == "Formal" and typeB == "Informal":
+                    if collab_BA == 0:
+                        sc_logs.append({
+                            "Jejaring Relasional": f"{actB} (Informal) → {actA} (Formal)",
+                            "Kerusakan Jaringan": "🚨 Low Linking Capital",
+                            "Deskripsi Diagnosis": f"Saluran kemitraan vertikal dari pranata lokal/informal {actB} menuju regulator formal {actA} bernilai murni 0. Risiko tinggi melahirkan distrust masif pada negara dan resistensi kebijakan terselubung."
+                        })
+                        
+        if len(sc_logs) == 0:
+            st.success("✅ **Kesehatan Sosial Terjamin:** Tingkat modal sosial (*Social Trust*) berada pada kapasitas optimal. Sinergi horizontal maupun saluran aspirasi vertikal berjalan harmonis.")
+        else:
+            st.warning(f"🚨 **Terdeteksi {len(sc_logs)} Titik Kelemahan Modal Sosial Komunitas:**")
+            df_sc = pd.DataFrame(sc_logs)
+            st.dataframe(df_sc, use_container_width=True)
+            st.write("---")
+            st.info("💡 **Rekomendasi Terapeutik (Ostromian Insight):** Bangun kembali modal sosial yang rapuh lewat fasilitasi ruang rembug warga lintas komunitas (untuk *Bridging*) serta pelembagaan sistem pengelolaan bersama (*Co-Management*) antara birokrasi dan pranata lokal (untuk *Linking*).")
