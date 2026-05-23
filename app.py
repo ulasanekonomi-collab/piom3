@@ -186,7 +186,6 @@ else:
         fig.update_layout(height=550, legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="left", x=0))
         st.plotly_chart(fig, use_container_width=True)
 
-    # Menu Analisis Individual Tetap Berfungsi Statis Sebagai Log Awal Pengguna
     elif menu_pilihan == "Analisis: Property Rights (NIE)":
         st.subheader("Analisis Hak Kepemilikan & Tatanan Kelembagaan (Property Rights)")
         logs = []
@@ -235,13 +234,13 @@ else:
 
 
     # ==========================================
-    # 🎯 MENU UTAMA: SIMULASI LABORATOTIUM CETAK BIRU 
+    # 🎯 MENU UTAMA: CETAK BIRU & SIMULASI MATRIKS IDEAL
     # ==========================================
     elif menu_pilihan == "🎯 Cetak Biru: Solusi Kelembagaan":
         st.subheader("Cetak Biru Tata Kelola & Simulasi Kebijakan Dinamis")
-        st.markdown("Selamat datang di **Policy Simulation Lab**. Di menu ini, Anda dapat menguji efektivitas paket reformasi kelembagaan terhadap tingkat kesehatan ekosistem secara interaktif.")
+        st.markdown("Selamat datang di **Policy Simulation Lab**. Di menu ini, Anda dapat menguji paket reformasi kelembagaan terhadap kesehatan sistem sekaligus memantau proyeksi perubahan spasial angka matriks menuju kondisi ideal.")
 
-        # --- STEP 1: INTERFAS PANEL KENDALI INTERVENSI ---
+        # --- STEP 1: PANEL KENDALI INTERVENSI ---
         st.write("#### 🎛️ Panel Kendali Intervensi Kebijakan:")
         col_a, col_b, col_c, col_d = st.columns(4)
         with col_a: sim_a = st.checkbox("Paket A: Harmonization")
@@ -249,11 +248,8 @@ else:
         with col_c: sim_c = st.checkbox("Paket C: Accountability")
         with col_d: sim_d = st.checkbox("Paket D: Co-Management")
 
-        # --- STEP 2: ENGINE PEMINDAI ANOMALI DASAR LINTAS DOMAIN ---
-        # Rumus Kapasitas Penyimpangan Maksimum Jaringan Berarah
-        # Kita uji 6 varians anomali utama dalam sistem pakar ini
+        # --- STEP 2: ENGINE PEMINDAI ANOMALI DASAR ---
         D_maksimal = max(6 * len(actors) * (len(actors) - 1), 1)
-        
         raw_anomalies = []
         
         for i in range(len(actors)):
@@ -261,7 +257,6 @@ else:
                 if i == j: continue
                 actA, actB = actors[i], actors[j]
                 
-                # Pengambilan nilai parameter dasar
                 p_formal = m_pow.loc[actA, actB]
                 p_reverse = m_pow.loc[actB, actA]
                 inf_val = m_inf.loc[actA, actB]
@@ -273,19 +268,19 @@ else:
                 typeA = m_attr.loc[actA, "Tipe Lembaga"]
                 typeB = m_attr.loc[actB, "Tipe Lembaga"]
 
-                # 1. Domain Property Rights
+                # 1. Property Rights
                 if i < j and c_val <= -4 and c_reverse <= -4 and p_formal >= 4 and p_reverse >= 4:
                     raw_anomalies.append({"AktorA": actA, "AktorB": actB, "Tipe": "⚠️ Institutional Deadlock", "Klaster": "Paket A"})
                 if c_val <= -3 and p_formal >= 4 and p_reverse == 0:
                     raw_anomalies.append({"AktorA": actA, "AktorB": actB, "Tipe": "🚨 Institutional Exclusion", "Klaster": "Paket A"})
                 
-                # 2. Domain Transaction Cost
+                # 2. Transaction Cost
                 if inf_val >= 4 and collab_val <= 1:
                     raw_anomalies.append({"AktorA": actA, "AktorB": actB, "Tipe": "🚨 Information Hoarding", "Klaster": "Paket B"})
                 if i < j and (inf_val >= 3 or inf_reverse >= 3) and collab_val == 0 and collab_reverse == 0:
                     raw_anomalies.append({"AktorA": actA, "AktorB": actB, "Tipe": "⚠️ High Transaction Cost Barrier", "Klaster": "Paket B"})
 
-                # 3. Domain Principal Agent
+                # 3. Principal Agent
                 if p_formal >= 4 and inf_reverse >= 4:
                     raw_anomalies.append({"AktorA": actA, "AktorB": actB, "Tipe": "🚨 Potential Agency Capture", "Klaster": "Paket C"})
                 
@@ -293,11 +288,10 @@ else:
                 if typeA == "Formal" and typeB == "Informal" and collab_reverse == 0:
                     raw_anomalies.append({"AktorA": actB, "AktorB": actA, "Tipe": "🚨 Low Linking Capital", "Klaster": "Paket D"})
 
-        # --- STEP 3: ENGINE EVALUASI DAMPAK SIMULASI & HITUNG HEALTH SCORE ---
+        # --- STEP 3: EVALUASI KONDISI PASCA SIMULASI ---
         D_aktual_awal = len(raw_anomalies)
         health_score_awal = int((1 - (D_aktual_awal / D_maksimal)) * 100)
         
-        # Evaluasi kondisi pasca intervensi
         active_anomalies_pasca = []
         ledger_data = []
 
@@ -326,7 +320,7 @@ else:
         health_score_pasca = int((1 - (D_aktual_pasca / D_maksimal)) * 100)
         delta_growth = health_score_pasca - health_score_awal
 
-        # --- STEP 4: VISUALISASI METRIK KESEHATAN SISTEM ---
+        # --- STEP 4: PANEL METRIK UTAMA ---
         st.write("---")
         st.write("#### 📊 Indikator Kesehatan Sistem Kelembagaan (System Health Score):")
         met1, met2 = st.columns(2)
@@ -335,20 +329,75 @@ else:
         with met2:
             st.metric(label="Kesehatan Sistem Pasca Simulasi (Proyeksi)", value=f"{health_score_pasca}%", delta=f"+{delta_growth}% Kenaikan" if delta_growth > 0 else "0% Stabil")
 
-        # --- STEP 5: VISUALISASI TABEL LEDGER DAMPAK KOMPARATIF ---
+        # --- STEP 5: VISUALISASI LEDGER ---
         st.write("---")
         st.write("#### 📜 Policy Impact Ledger (Daftar Jejak Dampak Kebijakan):")
-        
         if not ledger_data:
-            st.success("✅ **Sistem Konstitusi Aman:** Tidak ditemukan kontradiksi relasi strategis horizontal maupun vertikal. Struktur tata kelola berada pada efisiensi *Pareto Optimal* (Health Score: 100%).")
+            st.success("✅ **Sistem Konstitusi Aman:** Tidak ditemukan kontradiksi relasi strategis. Struktur tata kelola berada pada efisiensi *Pareto Optimal*.")
         else:
             df_ledger = pd.DataFrame(ledger_data)
             st.dataframe(df_ledger, use_container_width=True)
 
-        # --- STEP 6: DRAF REKOMENDASI TEKS GENERIK (DIPICU SECARA KONDISIONAL) ---
+        # --- STEP 6: FITUR BARU - SIMULASI MATRIKS IDEAL (DYNAMIC DUAL MATRIX GENERATOR) ---
+        st.write("---")
+        st.write("#### 📊 Panduan Konfigurasi Matriks Ideal (Target Kuantitatif Struktur)")
+        st.caption("Gunakan tab di bawah ini untuk melihat bagaimana angka-angka parameter sel matriks bertransformasi dari kondisi empiris saat ini menuju struktur ideal regulasi yang direkomendasikan.")
+
+        # Duplikasi matriks untuk simulasi ideal virtual di memori jangka pendek
+        ideal_conflict = m_conf.copy()
+        ideal_collab = m_collab.copy()
+        ideal_influence = m_inf.copy()
+
+        # Eksekusi manipulasi angka sel berdasarkan status tombol centang paket kebijakan
+        for item in raw_anomalies:
+            actA, actB = item["AktorA"], item["AktorB"]
+            
+            if item["Klaster"] == "Paket A" and sim_a:
+                if "Deadlock" in item["Tipe"]:
+                    ideal_conflict.loc[actA, actB] = 0
+                    ideal_conflict.loc[actB, actA] = 0
+                if "Exclusion" in item["Tipe"]:
+                    ideal_conflict.loc[actA, actB] = 0
+                    
+            elif item["Klaster"] == "Paket B" and sim_b:
+                if "Hoarding" in item["Tipe"]:
+                    ideal_collab.loc[actA, actB] = 4
+                if "Barrier" in item["Tipe"]:
+                    ideal_collab.loc[actA, actB] = 3
+                    ideal_collab.loc[actB, actA] = 3
+                    
+            elif item["Klaster"] == "Paket C" and sim_c:
+                if "Capture" in item["Tipe"]:
+                    ideal_influence.loc[actB, actA] = 1 # Memotong pengaruh balik Agen ke Principal
+
+            elif item["Klaster"] == "Paket D" and sim_d:
+                if "Linking" in item["Tipe"]:
+                    ideal_collab.loc[actA, actB] = 4 # Menaikkan derajat kemitraan informal-formal
+
+        # Tampilan Tab Interaktif untuk Komparasi Spasial Dua Matriks Utama
+        tab_mat_conf, tab_mat_collab = st.tabs(["🔒 Komparasi Matriks Konflik (Conflict Matrix)", "🤝 Komparasi Matriks Kolaborasi (Collaboration Matrix)"])
+        
+        with tab_mat_conf:
+            c_left, c_right = st.columns(2)
+            with c_left:
+                st.write("**Matriks Konflik Saat Ini (Kondisi Riil Pengguna):**")
+                st.dataframe(m_conf.style.background_gradient(cmap="Reds", axis=None), use_container_width=True)
+            with c_right:
+                st.write("**Target Matriks Konflik Pasca Regulasi (Konfigurasi Ideal):**")
+                st.dataframe(ideal_conflict.style.background_gradient(cmap="YlGn", axis=None), use_container_width=True)
+                
+        with tab_mat_collab:
+            col_left, col_right = st.columns(2)
+            with col_left:
+                st.write("**Matriks Kolaborasi Saat Ini (Kondisi Riil Pengguna):**")
+                st.dataframe(m_collab.style.background_gradient(cmap="Purples", axis=None), use_container_width=True)
+            with col_right:
+                st.write("**Target Matriks Kolaborasi Pasca Regulasi (Konfigurasi Ideal):**")
+                st.dataframe(ideal_collab.style.background_gradient(cmap="YlGn", axis=None), use_container_width=True)
+
+        # --- STEP 7: LEMBAR REKOMENDASI DOKUMEN GENERIK ---
         st.write("---")
         st.write("#### 🏛️ Lembar Rekomendasi Cetak Biru Kebijakan:")
-        
         unique_types = set([item["Tipe"] for item in raw_anomalies])
         
         if not unique_types:
