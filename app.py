@@ -440,23 +440,23 @@ else:
                 if klaster == "Paket A":
                     with st.expander(f"🏛️ INTERVENSI KLASTER A (Property Rights Redesign): {actA} ↔ {actB}", expanded=True):
                         st.write(f"**Diagnosis Masalah:** Terdeteksi anomali struktural **{tipe_ano}** pada koordinat hubungan faksi tersebut.")
-                        st.write(f"- **Target Kuantitatif:** Anda wajib merekayasa nilai sel **Conflict({actA}, {actB})** dari posisi aktual saat ini menuju ke target konfigurasi ideal **`0` (Netral/Harmonis)**.")
-                        st.write("- **Rekomendasi Dokumen Hukum:** Terbitkan atau sesuaikan aturan formal tertulis (seperti Surat Keputusan Bersama, Peraturan Daerah, atau Statuta Lembaga) yang memotong tumpang tindih batas yurisdiksi kewenangan secara tegas guna memberikan kepastian hak kelola eksklusif.")
+                        st.write(f"- **Target Kuantitatif:** Rekayasa nilai sel **Conflict({actA}, {actB})** dari posisi aktual saat ini menuju ke target konfigurasi ideal **`0` (Netral/Harmonis)**.")
+                        st.write("- **Rekomendasi Dokumen Hukum:** Terbitkan atau sesuaikan aturan formal tertulis yang memotong tumpang tindih batas yurisdiksi kewenangan secara tegas guna memberikan kepastian hak kelola eksklusif.")
                 
                 elif klaster == "Paket B":
                     with st.expander(f"📊 INTERVENSI KLASTER B (Transaction Cost Reduction): {actA} → {actB}", expanded=True):
                         st.write(f"**Diagnosis Masalah:** Terdeteksi anomali struktural **{tipe_ano}** berupa penyumbatan sirkulasi data harian.")
-                        st.write(f"- **Target Kuantitatif:** Anda wajib memaksa peningkatan nilai sel **Collaboration({actA}, {actB})** menuju ke batas efisiensi minimal **`3` atau `4` (Kemitraan Terbuka)**.")
+                        st.write(f"- **Target Kuantitatif:** Tingkatkan nilai sel **Collaboration({actA}, {actB})** menuju ke batas efisiensi minimal **`3` atau `4` (Kemitraan Terbuka)**.")
                         st.write("- **Rekomendasi Dokumen Hukum:** Klausul regulasi wajib mengamanatkan pembuatan platform pangkalan data terpadu tunggal (*Open-Data Manifest*) serta kewajiban audit transparansi operasional secara berkala guna melenyapkan perilaku asimetri informasi dan memangkas tingginya biaya pengawasan.")
 
                 elif klaster == "Paket C":
                     with st.expander(f"📜 INTERVENSI KLASTER C (Anti-Capture Accountability): {actA} → {actB}", expanded=True):
                         st.write(f"**Diagnosis Masalah:** Terdeteksi anomali struktural **{tipe_ano}** yang berisiko memicu tindakan oportunistik (*moral hazard/shirking*).")
-                        st.write(f"- **Target Kuantitatif:** Anda wajib memangkas daya pengaruh balik tak sehat pada sel **Influence({actB}, {actA})** agar merosot ke angka aman **`<= 1`**.")
+                        st.write(f"- **Target Kuantitatif:** Pangkas daya pengaruh balik tak sehat pada sel **Influence({actB}, {actA})** agar merosot ke angka aman **`<= 1`**.")
                         st.write("- **Rekomendasi Dokumen Hukum:** Struktur kontrak kerja sama wajib diubah radikal dari model penyerapan anggaran konvensional administratif menjadi skema *Performance-Based Contracting* (Kontrak Kinerja Berbasis Output Riil) untuk memutus rantai pembajakan regulasi oleh Pelaksana.")
 
                 elif klaster == "Paket D":
                     with st.expander(f"🌱 INTERVENSI KLASTER D (Social Capital Integration): {actA} → {actB}", expanded=True):
                         st.write(f"**Diagnosis Masalah:** Terdeteksi anomali struktural **{tipe_ano}** akibat keretakan jalinan modal sosial vertikal/horizontal.")
-                        st.write(f"- **Target Kuantitatif:** Anda wajib memulihkan nilai sel jalinan komunikasi **Collaboration({actA}, {actB})** dari angka keterasingan harian menuju target koordinasi sehat **`>= 3`**.")
+                        st.write(f"- **Target Kuantitatif:** Pulihkan nilai sel jalinan komunikasi **Collaboration({actA}, {actB})** dari angka keterasingan harian menuju target koordinasi sehat **`>= 3`**.")
                         st.write("- **Rekomendasi Dokumen Hukum:** Hentikan pemaksaan penegakan aturan hukum sepihak yang kaku (*top-down regulatory*). Lembagakan skema Pengelolaan Bersama (*Co-Management* atau *Polycentric Governance*) dengan memberikan ruang insentif timbal-balik yang menguntungkan pranata informal tapak guna membangun kembali fondasi kepercayaan sosial (*Social Trust*).")
