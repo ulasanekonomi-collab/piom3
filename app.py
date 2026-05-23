@@ -58,7 +58,7 @@ if len(st.session_state.actors) > 0 and "matrix_power" not in st.session_state:
 
 st.sidebar.header("1. Manajemen Aktor")
 with st.sidebar.form("add_actor_form", clear_on_submit=True):
-    new_actor = st.text_input("Nama Aktor Baru:")
+    new_actor = st.text_input("Nama Aktor Baru:", help="Masukkan nama institusi, dinas, organisasi, atau kelompok tapak yang terlibat.")
     submit_actor = st.form_submit_button("Tambah Aktor")
     if submit_actor and new_actor:
         if new_actor not in st.session_state.actors:
@@ -132,8 +132,9 @@ else:
     
     if menu_pilihan == "Data: Matriks Atribut Aktor":
         st.subheader("Matriks Profil & Atribut Aktor")
+        st.caption("Pemberian profil dasar kasta sosiologis kelembagaan untuk membedakan perlakuan penegakan hukum negara vs norma komunitas.")
         config_attr = {
-            "Tipe Lembaga": st.column_config.SelectboxColumn(options=["Formal", "Informal"], width="medium", required=True),
+            "Tipe Lembaga": st.column_config.SelectboxColumn(options=["Formal", "Informal"], width="medium", required=True, help="Formal: Lembaga berbasis hukum negara (Dinas/BUMD). Informal: Lembaga berbasis norma tapak/komunitas (LSM/Pengepul)."),
             "Peran Utama": st.column_config.TextColumn(width="medium")
         }
         edited_attr = st.data_editor(st.session_state.matrix_atribut, column_config=config_attr, use_container_width=True, key="editor_attr_state", on_change=save_changes, args=("matrix_atribut", "editor_attr_state"))
@@ -141,24 +142,28 @@ else:
 
     elif menu_pilihan == "Data: Matriks Collaboration":
         st.subheader("Matriks Kolaborasi Antar-Aktor (Collaboration)")
+        st.caption("Mengukur intensitas komunikasi taktis, koordinasi harian, dan pertukaran sumber daya antar-aktor (Skala 0 s.d 5).")
         config_collab = {col: st.column_config.SelectboxColumn(options=cicp_positive_options, width="medium") for col in m_collab.columns}
         edited_collab = st.data_editor(m_collab, column_config=config_collab, use_container_width=True, key="editor_collab_state", on_change=save_changes, args=("matrix_collaboration", "editor_collab_state"))
         st.session_state.matrix_collaboration = edited_collab
 
     elif menu_pilihan == "Data: Matriks Influence":
         st.subheader("Matriks Pengaruh Antar-Aktor (Influence)")
+        st.caption("Mengukur kapasitas daya lobi, modal kapital, kekuatan politik, atau penguasaan info aktor untuk menyetir keputusan faksi lain (Skala -5 s.d 5).")
         config_inf = {col: st.column_config.SelectboxColumn(options=cicp_full_options, width="medium") for col in m_inf.columns}
         edited_inf = st.data_editor(m_inf, column_config=config_inf, use_container_width=True, key="editor_inf_state", on_change=save_changes, args=("matrix_influence", "editor_inf_state"))
         st.session_state.matrix_influence = edited_inf
 
     elif menu_pilihan == "Data: Matriks Conflict":
         st.subheader("Matriks Konflik Kepentingan Antar-Aktor (Conflict)")
+        st.caption("Memetakan derajat friksi, resistensi, benturan visi, atau permusuhan tersamar antar faksi terkait objek kelola (Skala -5 s.d 0).")
         config_conf = {col: st.column_config.SelectboxColumn(options=cicp_negative_options, width="medium") for col in m_conf.columns}
         edited_conf = st.data_editor(m_conf, column_config=config_conf, use_container_width=True, key="editor_conf_state", on_change=save_changes, args=("matrix_conflict", "editor_conf_state"))
         st.session_state.matrix_conflict = edited_conf
 
     elif menu_pilihan == "Data: Matriks Power":
         st.subheader("Matriks Kekuasaan/Otoritas Antar-Aktor (Power)")
+        st.caption("Mengukur kepemilikan otoritas formal hukum, hak veto, atau yurisdiksi konstitusional legalitas atas faksi lain (Skala -5 s.d 5).")
         config_pow = {col: st.column_config.SelectboxColumn(options=cicp_full_options, width="medium") for col in m_pow.columns}
         edited_pow = st.data_editor(m_pow, column_config=config_pow, use_container_width=True, key="editor_pow_state", on_change=save_changes, args=("matrix_power", "editor_pow_state"))
         st.session_state.matrix_power = edited_pow
@@ -240,13 +245,29 @@ else:
         st.subheader("Cetak Biru Tata Kelola & Simulasi Kebijakan Dinamis")
         st.markdown("Selamat datang di **Policy Simulation Lab**. Di menu ini, Anda dapat menguji paket reformasi kelembagaan terhadap kesehatan sistem sekaligus memantau proyeksi perubahan spasial angka matriks menuju kondisi ideal.")
 
-        # --- STEP 1: PANEL KENDALI INTERVENSI ---
+        # --- STEP 1: PANEL KENDALI INTERVENSI (SUNDUHAN KODE HOVER TOOLTIP GLOSARIUM DI SINI) ---
         st.write("#### 🎛️ Panel Kendali Intervensi Kebijakan:")
         col_a, col_b, col_c, col_d = st.columns(4)
-        with col_a: sim_a = st.checkbox("Paket A: Harmonization")
-        with col_b: sim_b = st.checkbox("Paket B: Open Data")
-        with col_c: sim_c = st.checkbox("Paket C: Accountability")
-        with col_d: sim_d = st.checkbox("Paket D: Co-Management")
+        with col_a: 
+            sim_a = st.checkbox(
+                "Paket A: Harmonization", 
+                help="Merespons '⚠️ Institutional Deadlock' atau '🚨 Institutional Exclusion' (Level 2 Williamson: Aturan Formal). Berfungsi menyelaraskan batas yurisdiksi otoritas agar hukum tidak tumpang tindih."
+            )
+        with col_b: 
+            sim_b = st.checkbox(
+                "Paket B: Open Data", 
+                help="Merespons '🚨 Information Hoarding' atau '⚠️ High Transaction Cost Barrier' (Level 3 Williamson: Tata Kelola/Kontrak). Berfungsi memangkas asimetri data hulu-hilir lewat instrumen data terbuka."
+            )
+        with col_c: 
+            sim_c = st.checkbox(
+                "Paket C: Accountability", 
+                help="Merespons '🚨 Potential Agency Capture' atau '⚠️ Indikasi Moral Hazard' (Level 3 Williamson: Tata Kelola/Kontrak). Berfungsi mengunci kelakuan oportunistik pelaksana lewat kontrak kinerja berbasis output."
+            )
+        with col_d: 
+            sim_d = st.checkbox(
+                "Paket D: Co-Management", 
+                help="Merespons '🚨 Low Linking Capital' atau '🚨 Low Bridging Capital' (Level 1 Williamson: Modal Sosial/Informal). Berfungsi melegalisasi peran pranata komunitas tapak ke dalam rantai pasok formal."
+            )
 
         # --- STEP 2: ENGINE PEMINDAI ANOMALI DASAR ---
         D_maksimal = max(6 * len(actors) * (len(actors) - 1), 1)
@@ -274,7 +295,7 @@ else:
                 if c_val <= -3 and p_formal >= 4 and p_reverse == 0:
                     raw_anomalies.append({"AktorA": actA, "AktorB": actB, "Tipe": "🚨 Institutional Exclusion", "Klaster": "Paket A"})
                 
-                # 2. Domain Transaction Cost
+                # 2. Transaction Cost
                 if inf_val >= 4 and collab_val <= 1:
                     raw_anomalies.append({"AktorA": actA, "AktorB": actB, "Tipe": "🚨 Information Hoarding", "Klaster": "Paket B"})
                 if i < j and (inf_val >= 3 or inf_reverse >= 3) and collab_val == 0 and collab_reverse == 0:
@@ -322,7 +343,7 @@ else:
 
         # --- STEP 4: PANEL METRIK UTAMA ---
         st.write("---")
-        st.write("#### 📊 Indikator Kesehatan Sistem Kelembagaan (System Health Score):")
+        st.write("#### 📊 Indikator Kesehatan Sistem Kelembagaan (System Health Score):", help="System Health Score: Indikator kuantitatif skala 0-100% untuk mengukur derajat ketahanan, efisiensi alokasi, dan kepatuhan koordinasi di dalam ekosistem.")
         met1, met2 = st.columns(2)
         with met1:
             st.metric(label="Kesehatan Sistem Aktual (Kondisi Riil)", value=f"{health_score_awal}%", delta="Kondisi Awal", delta_color="inverse")
@@ -331,16 +352,16 @@ else:
 
         # --- STEP 5: VISUALISASI LEDGER ---
         st.write("---")
-        st.write("#### 📜 Policy Impact Ledger (Daftar Jejak Dampak Kebijakan):")
+        st.write("#### 📜 Policy Impact Ledger (Daftar Jejak Dampak Kebijakan):", help="Policy Impact Ledger: Buku jejak dinamis untuk merekam perbandingan status anomali relasi sebelum vs sesudah intervensi solusi.")
         if not ledger_data:
             st.success("✅ **Sistem Konstitusi Aman:** Tidak ditemukan kontradiksi relasi strategis. Struktur tata kelola berada pada efisiensi *Pareto Optimal*.")
         else:
             df_ledger = pd.DataFrame(ledger_data)
             st.dataframe(df_ledger, use_container_width=True)
 
-        # --- STEP 6: FIX ERROR - SIMULASI MATRIKS IDEAL (MENGGUNAKAN STANDAR DATAFRAME) ---
+        # --- STEP 6: SIMULASI MATRIKS IDEAL ---
         st.write("---")
-        st.write("#### 📊 Panduan Konfigurasi Matriks Ideal (Target Kuantitatif Struktur)")
+        st.write("#### 📊 Panduan Konfigurasi Matriks Ideal (Target Kuantitatif Struktur)", help="Matriks Ideal: Kompas rujukan normatif tertulis mengenai ke mana arah angka kolaborasi dan konflik harus diubah di dunia nyata lewat instrumen hukum formal.")
         st.caption("Gunakan tab di bawah ini untuk melihat bagaimana angka-angka parameter sel matriks bertransformasi dari kondisi empiris saat ini menuju struktur ideal regulasi yang direkomendasikan.")
 
         # Duplikasi matriks untuk simulasi ideal virtual di memori jangka pendek
@@ -368,13 +389,13 @@ else:
                     
             elif item["Klaster"] == "Paket C" and sim_c:
                 if "Capture" in item["Tipe"]:
-                    ideal_influence.loc[actB, actA] = 1 # Memotong pengaruh balik Agen ke Principal
+                    ideal_influence.loc[actB, actA] = 1
 
             elif item["Klaster"] == "Paket D" and sim_d:
                 if "Linking" in item["Tipe"]:
-                    ideal_collab.loc[actA, actB] = 4 # Kemitraan ditingkatkan
+                    ideal_collab.loc[actA, actB] = 4
 
-        # Tampilan Tab Interaktif Tanpa background_gradient() Agar Bebas Matplotlib Error
+        # Tampilan Tab Interaktif
         tab_mat_conf, tab_mat_collab = st.tabs(["🔒 Komparasi Matriks Konflik (Conflict Matrix)", "🤝 Komparasi Matriks Kolaborasi (Collaboration Matrix)"])
         
         with tab_mat_conf:
@@ -391,7 +412,7 @@ else:
             with col_left:
                 st.write("**Matriks Kolaborasi Saat Ini (Kondisi Riil Pengguna):**")
                 st.dataframe(m_collab, use_container_width=True)
-            with col_right:
+            with c_right:
                 st.write("**Target Matriks Kolaborasi Pasca Regulasi (Konfigurasi Ideal):**")
                 st.dataframe(ideal_collab, use_container_width=True)
 
