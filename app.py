@@ -86,7 +86,8 @@ menu_pilihan = st.sidebar.radio(
         "Data: Matriks Conflict",
         "Data: Matriks Power",
         "Analisis: Power & Public Choice",
-        "Analisis: Property Rights (NIE)"
+        "Analisis: Property Rights (NIE)",
+        "Analisis: Transaction Cost & Info"
     ]
 )
 
@@ -213,7 +214,7 @@ else:
         fig.update_layout(height=550, legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="left", x=0))
         st.plotly_chart(fig, use_container_width=True)
 
-    # --- MENU: ANALISIS PROPERTY RIGHTS (LOGIKA BARU NEW INSTITUTIONAL ECONOMICS) ---
+    # --- MENU: ANALISIS PROPERTY RIGHTS (NIE) ---
     elif menu_pilihan == "Analisis: Property Rights (NIE)":
         st.subheader("Analisis Hak Kepemilikan & Tatanan Kelembagaan (Property Rights)")
         st.markdown("Mengacu pada kerangka pemikiran **Oliver Williamson & Ronald Coase**, dashboard ini memindai titik friksi kelembagaan akibat sengketa hak kelola (*overlapping jurisdictions*) atau peminggiran hak kelompok marjinal.")
@@ -224,19 +225,16 @@ else:
         
         friction_logs = []
         
-        # Lakukan pemindaian persilangan antar sepasang aktor (A dan B)
         for i in range(len(actors)):
             for j in range(i + 1, len(actors)):
                 actA = actors[i]
                 actB = actors[j]
                 
-                # Ekstrak nilai konflik dua arah dan power dua arah
                 c_A_to_B = m_conf.loc[actA, actB]
                 c_B_to_A = m_conf.loc[actB, actA]
                 p_A_to_B = m_pow.loc[actA, actB]
                 p_B_to_A = m_pow.loc[actB, actA]
                 
-                # Jembatan Logika Kasus 1: Sengketa Otoritas Formal/Jurisdiksi (Deadlock)
                 if (c_A_to_B <= -4 or c_B_to_A <= -4) and (p_A_to_B >= 4 and p_B_to_A >= 4):
                     friction_logs.append({
                         "Interaksi Aktor": f"{actA} $\\leftrightarrow$ {actB}",
@@ -244,7 +242,6 @@ else:
                         "Deskripsi Diagnosis": f"Terjadi tumpang tindih Hak Kepemilikan formal yang parah (Keduanya memegang Power formal $\\ge 4$ namun memiliki tingkat konflik relasi ekstrem $\\le -4$). Regulasi berisiko macet total."
                     })
                 
-                # Jembatan Logika Kasus 2: Eksklusi Kelompok Marjinal (Asimetri Hak)
                 elif (c_A_to_B <= -3 or c_B_to_A <= -3) and ((p_A_to_B >= 4 and p_B_to_A == 0) or (p_B_to_A >= 4 and p_A_to_B == 0)):
                     penguasa = actA if p_A_to_B >= 4 else actB
                     tereksklusi = actB if p_A_to_B >= 4 else actA
@@ -254,13 +251,58 @@ else:
                         "Deskripsi Diagnosis": f"Struktur aturan formal mengucilkan pranata lokal/informal. Otoritas formal {penguasa} menekan kepentingan {tereksklusi} tanpa memberikan ruang hak tawar hukum yang setara (Power = 0)."
                     })
         
-        # Tampilkan hasil deteksi otomatis ke layar utama
         if len(friction_logs) == 0:
             st.success("✅ **Sistem Aman:** Tidak ditemukan indikasi kerusakan jalinan 'Property Rights' atau tumpang tindih jurisdiksi formal yang ekstrem dari data matriks saat ini.")
         else:
             st.warning(f"🚨 **Terdeteksi {len(friction_logs)} Titik Gesekan Kelembagaan Sektoral:**")
             df_friction = pd.DataFrame(friction_logs)
             st.dataframe(df_friction, use_container_width=True)
-            
             st.write("---")
             st.info("💡 **Rekomendasi Kebijakan (Coasean Insight):** Sengketa kelembagaan di atas membutuhkan penegasan garis demarkasi hak kelola (*clear-cut property rights*) pada Level 2 Williamson (Aturan Formal) untuk menekan tingginya biaya transaksi di lapangan.")
+
+    # --- MENU: ANALISIS TRANSACTION COST & ASIMETRI INFORMASI (LOGIKA BARU) ---
+    elif menu_pilihan == "Analisis: Transaction Cost & Info":
+        st.subheader("Analisis Biaya Transaksi & Asimetri Informasi")
+        st.markdown("Mengacu pada kerangka pemikiran **Ronald Coase & Oliver Williamson**, modul ini mendeteksi kebocoran efisiensi sistem akibat pembendungan informasi (*information hoarding*) atau sumbatan sekat birokrasi.")
+        
+        m_inf = st.session_state.matrix_influence
+        m_collab = st.session_state.matrix_collaboration
+        actors = st.session_state.actors
+        
+        tc_logs = []
+        
+        for actA in actors:
+            for actB in actors:
+                if actA == actB:
+                    continue
+                
+                inf_val = m_inf.loc[actA, actB]
+                collab_val = m_collab.loc[actA, actB]
+                inf_reverse = m_inf.loc[actB, actA]
+                collab_reverse = m_collab.loc[actB, actA]
+                
+                # Deteksi Kasus 1: Information Hoarding
+                if inf_val >= 4 and collab_val <= 1:
+                    tc_logs.append({
+                        "Arah Hubungan": f"{actA} $\\rightarrow$ {actB}",
+                        "Indikator Penyakit": "🚨 Information Hoarding",
+                        "Deskripsi Analisis": f"{actA} memancarkan daya lobi/pengaruh yang kuat ({inf_val}) terhadap {actB}, namun menahan level kolaborasi riil di tingkat minimal ({collab_val}). Terindikasi memanfaatkan asimetri informasi untuk mengunci posisi tawar."
+                    })
+                
+                # Deteksi Kasus 2: High Transaction Cost Barrier (Hanya dicek sekali per pasangan aktor)
+                if actA < actB:
+                    if (inf_val >= 3 or inf_reverse >= 3) and (collab_val == 0 and collab_reverse == 0):
+                        tc_logs.append({
+                            "Arah Hubungan": f"{actA} $\\leftrightarrow$ {actB}",
+                            "Indikator Penyakit": "⚠️ High Transaction Cost Barrier",
+                            "Deskripsi Analisis": f"Kedua aktor saling memiliki keterikatan pengaruh horizontal yang kuat, namun level kolaborasi dua arah terkunci di angka 0. Tingginya sekat birokrasi atau 'distrust' membuat biaya transaksi koordinasi lebih mahal daripada insentif kerjasamanya."
+                        })
+                        
+        if len(tc_logs) == 0:
+            st.success("✅ **Sistem Efisien:** Tidak terdeteksi indikasi pembendungan informasi strategis atau sumbatan biaya transaksi yang ekstrem antar-aktor.")
+        else:
+            st.warning(f"🚨 **Terdeteksi {len(tc_logs)} Titik Kebocoran Efisiensi Transaksi:**")
+            df_tc = pd.DataFrame(tc_logs)
+            st.dataframe(df_tc, use_container_width=True)
+            st.write("---")
+            st.info("💡 **Rekomendasi Kebijakan (Williamsonian Insight):** Atasi friksi di atas dengan menyusun instruksi kerja bersama, standarisasi data satu pintu, atau penguatan sistem pengawasan independen untuk memangkas *Information Asymmetry*.")
