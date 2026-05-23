@@ -9,7 +9,6 @@ st.set_page_config(layout="wide")
 # ==========================================
 # SIDEBAR: PROFIL PENGEMBANG (VERSI KOMPAK)
 # ==========================================
-# Foto diperkecil menggunakan kolom di dalam sidebar agar tidak memakan ruang
 col1, col2 = st.sidebar.columns([1, 2])
 with col1:
     st.image("yuhka.jpg", use_container_width=True)
@@ -110,7 +109,6 @@ def save_changes(key_name, editor_state_name):
                 df.loc[row_name, col_name] = val
         st.session_state[key_name] = df
 
-# Proteksi jika aktor masih kosong
 if len(st.session_state.actors) == 0:
     st.info("Silakan masukkan minimal satu nama aktor di menu samping (sidebar) terlebih dahulu untuk membuka instrumen.")
 else:
@@ -215,7 +213,54 @@ else:
         fig.update_layout(height=550, legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="left", x=0))
         st.plotly_chart(fig, use_container_width=True)
 
-    # --- MENU: ANALISIS PROPERTY RIGHTS (SIAP DIKEMBANGKAN) ---
+    # --- MENU: ANALISIS PROPERTY RIGHTS (LOGIKA BARU NEW INSTITUTIONAL ECONOMICS) ---
     elif menu_pilihan == "Analisis: Property Rights (NIE)":
         st.subheader("Analisis Hak Kepemilikan & Tatanan Kelembagaan (Property Rights)")
-        st.info("Pondasi teoritis (NIE & Williamson Four Levels) sudah siap. Menu ini siap kita isi dengan mesin diagnosis otomatis untuk mendeteksi Institutional Deadlock dan Eksklusi Hak.")
+        st.markdown("Mengacu pada kerangka pemikiran **Oliver Williamson & Ronald Coase**, dashboard ini memindai titik friksi kelembagaan akibat sengketa hak kelola (*overlapping jurisdictions*) atau peminggiran hak kelompok marjinal.")
+        
+        m_conf = st.session_state.matrix_conflict
+        m_pow = st.session_state.matrix_power
+        actors = st.session_state.actors
+        
+        friction_logs = []
+        
+        # Lakukan pemindaian persilangan antar sepasang aktor (A dan B)
+        for i in range(len(actors)):
+            for j in range(i + 1, len(actors)):
+                actA = actors[i]
+                actB = actors[j]
+                
+                # Ekstrak nilai konflik dua arah dan power dua arah
+                c_A_to_B = m_conf.loc[actA, actB]
+                c_B_to_A = m_conf.loc[actB, actA]
+                p_A_to_B = m_pow.loc[actA, actB]
+                p_B_to_A = m_pow.loc[actB, actA]
+                
+                # Jembatan Logika Kasus 1: Sengketa Otoritas Formal/Jurisdiksi (Deadlock)
+                if (c_A_to_B <= -4 or c_B_to_A <= -4) and (p_A_to_B >= 4 and p_B_to_A >= 4):
+                    friction_logs.append({
+                        "Interaksi Aktor": f"{actA} $\\leftrightarrow$ {actB}",
+                        "Friction Type": "⚠️ Institutional Deadlock",
+                        "Deskripsi Diagnosis": f"Terjadi tumpang tindih Hak Kepemilikan formal yang parah (Keduanya memegang Power formal $\\ge 4$ namun memiliki tingkat konflik relasi ekstrem $\\le -4$). Regulasi berisiko macet total."
+                    })
+                
+                # Jembatan Logika Kasus 2: Eksklusi Kelompok Marjinal (Asimetri Hak)
+                elif (c_A_to_B <= -3 or c_B_to_A <= -3) and ((p_A_to_B >= 4 and p_B_to_A == 0) or (p_B_to_A >= 4 and p_A_to_B == 0)):
+                    penguasa = actA if p_A_to_B >= 4 else actB
+                    tereksklusi = actB if p_A_to_B >= 4 else actA
+                    friction_logs.append({
+                        "Interaksi Aktor": f"{penguasa} $\\rightarrow$ {tereksklusi}",
+                        "Friction Type": "🚨 Institutional Exclusion",
+                        "Deskripsi Diagnosis": f"Struktur aturan formal mengucilkan pranata lokal/informal. Otoritas formal {penguasa} menekan kepentingan {tereksklusi} tanpa memberikan ruang hak tawar hukum yang setara (Power = 0)."
+                    })
+        
+        # Tampilkan hasil deteksi otomatis ke layar utama
+        if len(friction_logs) == 0:
+            st.success("✅ **Sistem Aman:** Tidak ditemukan indikasi kerusakan jalinan 'Property Rights' atau tumpang tindih jurisdiksi formal yang ekstrem dari data matriks saat ini.")
+        else:
+            st.warning(f"🚨 **Terdeteksi {len(friction_logs)} Titik Gesekan Kelembagaan Sektoral:**")
+            df_friction = pd.DataFrame(friction_logs)
+            st.dataframe(df_friction, use_container_width=True)
+            
+            st.write("---")
+            st.info("💡 **Rekomendasi Kebijakan (Coasean Insight):** Sengketa kelembagaan di atas membutuhkan penegasan garis demarkasi hak kelola (*clear-cut property rights*) pada Level 2 Williamson (Aturan Formal) untuk menekan tingginya biaya transaksi di lapangan.")
