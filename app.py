@@ -74,7 +74,7 @@ else:
 st.sidebar.write("---")
 
 # ==========================================
-# SIDEBAR: NAVIGASI MENU UTAMA (KOMPAK VERTIKAL)
+# SIDEBAR: NAVIGASI MENU UTAMA
 # ==========================================
 st.sidebar.header("2. Menu Navigasi")
 menu_pilihan = st.sidebar.radio(
@@ -87,7 +87,8 @@ menu_pilihan = st.sidebar.radio(
         "Data: Matriks Power",
         "Analisis: Power & Public Choice",
         "Analisis: Property Rights (NIE)",
-        "Analisis: Transaction Cost & Info"
+        "Analisis: Transaction Cost & Info",
+        "Analisis: Principal-Agent (NIE)"
     ]
 )
 
@@ -237,7 +238,7 @@ else:
                 
                 if (c_A_to_B <= -4 or c_B_to_A <= -4) and (p_A_to_B >= 4 and p_B_to_A >= 4):
                     friction_logs.append({
-                        "Interaksi Aktor": f"{actA} $\\leftrightarrow$ {actB}",
+                        "Interaksi Aktor": f"{actA} ↔ {actB}",
                         "Friction Type": "⚠️ Institutional Deadlock",
                         "Deskripsi Diagnosis": f"Terjadi tumpang tindih Hak Kepemilikan formal yang parah (Keduanya memegang Power formal $\\ge 4$ namun memiliki tingkat konflik relasi ekstrem $\\le -4$). Regulasi berisiko macet total."
                     })
@@ -246,7 +247,7 @@ else:
                     penguasa = actA if p_A_to_B >= 4 else actB
                     tereksklusi = actB if p_A_to_B >= 4 else actA
                     friction_logs.append({
-                        "Interaksi Aktor": f"{penguasa} $\\rightarrow$ {tereksklusi}",
+                        "Interaksi Aktor": f"{penguasa} → {tereksklusi}",
                         "Friction Type": "🚨 Institutional Exclusion",
                         "Deskripsi Diagnosis": f"Struktur aturan formal mengucilkan pranata lokal/informal. Otoritas formal {penguasa} menekan kepentingan {tereksklusi} tanpa memberikan ruang hak tawar hukum yang setara (Power = 0)."
                     })
@@ -260,7 +261,7 @@ else:
             st.write("---")
             st.info("💡 **Rekomendasi Kebijakan (Coasean Insight):** Sengketa kelembagaan di atas membutuhkan penegasan garis demarkasi hak kelola (*clear-cut property rights*) pada Level 2 Williamson (Aturan Formal) untuk menekan tingginya biaya transaksi di lapangan.")
 
-    # --- MENU: ANALISIS TRANSACTION COST & ASIMETRI INFORMASI (LOGIKA BARU) ---
+    # --- MENU: ANALISIS TRANSACTION COST & INFO ---
     elif menu_pilihan == "Analisis: Transaction Cost & Info":
         st.subheader("Analisis Biaya Transaksi & Asimetri Informasi")
         st.markdown("Mengacu pada kerangka pemikiran **Ronald Coase & Oliver Williamson**, modul ini mendeteksi kebocoran efisiensi sistem akibat pembendungan informasi (*information hoarding*) atau sumbatan sekat birokrasi.")
@@ -281,19 +282,17 @@ else:
                 inf_reverse = m_inf.loc[actB, actA]
                 collab_reverse = m_collab.loc[actB, actA]
                 
-                # Deteksi Kasus 1: Information Hoarding
                 if inf_val >= 4 and collab_val <= 1:
                     tc_logs.append({
-                        "Arah Hubungan": f"{actA} → {actB}", # Menggunakan panah teks standar
+                        "Arah Hubungan": f"{actA} → {actB}",
                         "Indikator Penyakit": "🚨 Information Hoarding",
                         "Deskripsi Analisis": f"{actA} memancarkan daya lobi/pengaruh yang kuat ({inf_val}) terhadap {actB}, namun menahan level kolaborasi riil di tingkat minimal ({collab_val}). Terindikasi memanfaatkan asimetri informasi untuk mengunci posisi tawar."
                     })
                 
-                # Deteksi Kasus 2: High Transaction Cost Barrier
                 if actA < actB:
                     if (inf_val >= 3 or inf_reverse >= 3) and (collab_val == 0 and collab_reverse == 0):
                         tc_logs.append({
-                            "Arah Hubungan": f"{actA} ↔ {actB}", # Menggunakan panah teks standar
+                            "Arah Hubungan": f"{actA} ↔ {actB}",
                             "Indikator Penyakit": "⚠️ High Transaction Cost Barrier",
                             "Deskripsi Analisis": f"Kedua aktor saling memiliki keterikatan pengaruh horizontal yang kuat, namun level kolaborasi dua arah terkunci di angka 0. Tingginya sekat birokrasi atau 'distrust' membuat biaya transaksi koordinasi lebih mahal daripada insentif kerjasamanya."
                         })
@@ -306,3 +305,49 @@ else:
             st.dataframe(df_tc, use_container_width=True)
             st.write("---")
             st.info("💡 **Rekomendasi Kebijakan (Williamsonian Insight):** Atasi friksi di atas dengan menyusun instruksi kerja bersama, standarisasi data satu pintu, atau penguatan sistem pengawasan independen untuk memangkas *Information Asymmetry*.")
+
+    # --- MENU: ANALISIS PRINCIPAL-AGENT RELATIONSHIP (LOGIKA BARU KELAR!) ---
+    elif menu_pilihan == "Analisis: Principal-Agent (NIE)":
+        st.subheader("Analisis Hubungan Keagenan (Principal-Agent Relationship)")
+        st.markdown("Mengacu pada tesis **Michael Jensen & William Meckling**, modul ini melacak kerentanan moral hazard di mana pelaksana program (*Agent*) menyimpangkan komitmen, atau mendikte balik pemberi mandat (*Principal*).")
+        
+        m_pow = st.session_state.matrix_power
+        m_inf = st.session_state.matrix_influence
+        m_collab = st.session_state.matrix_collaboration
+        actors = st.session_state.actors
+        
+        pa_logs = []
+        
+        for actA in actors:
+            for actB in actors:
+                if actA == actB:
+                    continue
+                
+                p_formal = m_pow.loc[actA, actB]
+                inf_reverse = m_inf.loc[actB, actA]
+                collab_reverse = m_collab.loc[actB, actA]
+                
+                # Kasus 1: Potential Agency Capture (Agen Menjinakkan Pengawas)
+                if p_formal >= 4 and inf_reverse >= 4:
+                    pa_logs.append({
+                        "Hubungan Struktural": f"{actA} (Principal) → {actB} (Agent)",
+                        "Kerentanan Hubungan": "🚨 Potential Agency Capture",
+                        "Deskripsi Analisis": f"{actA} memegang otoritas hukum formal ({p_formal}) atas {actB}. Namun, {actB} memancarkan lobi pengaruh balik ekstrem ({inf_reverse}) ke {actA}. Risiko tinggi fungsi pengawasan formal runtuh tersandera kepentingan Agen."
+                    })
+                
+                # Kasus 2: Shirking / Implementation Decoupling (Penyimpangan Mandat Terselubung)
+                elif p_formal >= 4 and collab_reverse == 0:
+                    pa_logs.append({
+                        "Hubungan Struktural": f"{actA} (Principal) → {actB} (Agent)",
+                        "Kerentanan Hubungan": "⚠️ Indikasi Moral Hazard (Shirking)",
+                        "Deskripsi Analisis": f"{actA} menurunkan instruksi/mandat formal yang kuat ({p_formal}) kepada {actB}, namun respon kolaborasi balik dari {actB} murni berharga 0. Terindikasi melakukan pengabaian mandat secara oportunis demi meredam radar evaluasi."
+                    })
+                    
+        if len(pa_logs) == 0:
+            st.success("✅ **Hubungan Akuntabel:** Tidak terdeteksi adanya indikasi moral hazard penyimpangan tugas atau gejala tersanderanya pengawas oleh agen.")
+        else:
+            st.warning(f"🚨 **Terdeteksi {len(pa_logs)} Titik Kerentanan Akuntabilitas Keagenan:**")
+            df_pa = pd.DataFrame(pa_logs)
+            st.dataframe(df_pa, use_container_width=True)
+            st.write("---")
+            st.info("💡 **Rekomendasi Kebijakan (Agency-Theory Insight):** Rekonstruksi struktur insentif kontrak kerja dengan beralih ke *Performance-Based Contracting* (insentif berbasis capaian output riil) dan perketat audit pihak ketiga independen.")
